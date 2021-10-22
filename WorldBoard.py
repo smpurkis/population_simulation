@@ -1,9 +1,12 @@
 from typing import Tuple
 
 import numpy as np
+
 from Grass import Grass
 
 np.set_printoptions(linewidth=1000)
+
+
 class WorldBoard:
     def __init__(self, size: Tuple[int, int] = (100, 100)):
         self.size = size
