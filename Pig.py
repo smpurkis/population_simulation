@@ -1,9 +1,8 @@
-from BaseAnimal import BaseAnimal
+from BaseEntity import BaseEntity
 
-
-class Pig(BaseAnimal):
-    def __init__(self, colour: str = "pink"):
-        super().__init__(colour=colour)
+class Pig(BaseEntity):
+    def __init__(self, colour: str = "pink", *args, **kwargs):
+        super().__init__(colour=colour, *args, **kwargs)
 
     def __str__(self):
-        return f"pig_{str(self.creation_time).replace(' ', '-')}"
+        return f"P-{hash(str(self.creation_time).replace(' ', '-'))}"

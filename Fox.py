@@ -1,9 +1,9 @@
-from BaseAnimal import BaseAnimal
+from BaseEntity import BaseEntity
 
 
-class Fox(BaseAnimal):
-    def __init__(self, colour: str = "orange"):
-        super().__init__(colour=colour)
+class Fox(BaseEntity):
+    def __init__(self, colour: str = "orange", *args, **kwargs):
+        super().__init__(colour=colour, *args, **kwargs)
 
     def __str__(self):
-        return f"fox_{str(self.creation_time).replace(' ', '-')}"
+        return f"F-{hash(str(self.creation_time).replace(' ', '-'))}"
