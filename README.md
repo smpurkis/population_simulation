@@ -10,3 +10,8 @@ The aims of this project are as such:
     - Add vision and hearing to the animals
     - Add evolution via genetic algorithms to animals
     - Add boundaries to the grip
+
+Ideas:
+- Boundaries:
+  - Water
+  - 

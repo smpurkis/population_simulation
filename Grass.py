@@ -1,4 +1,4 @@
-from datetime import datetime as dt
+import emoji
 
 from BaseEntity import BaseEntity
 
@@ -8,4 +8,5 @@ class Grass(BaseEntity):
         super().__init__(colour=colour, position=position)
 
     def __str__(self):
-        return f"G-{hash(str(self.creation_time).replace(' ', '-'))}"
+        return f"{emoji.emojize(':seedling:')}"
+        # return f"{emoji.emojize(':seedling:')}-{hash(str(self.creation_time).replace(' ', '-'))}"

@@ -1,3 +1,5 @@
+import emoji
+
 from BaseEntity import BaseEntity
 
 
@@ -6,4 +8,5 @@ class Fox(BaseEntity):
         super().__init__(colour=colour, *args, **kwargs)
 
     def __str__(self):
-        return f"F-{hash(str(self.creation_time).replace(' ', '-'))}"
+        return f"{emoji.emojize(':fox:')}"
+        # return f"{emoji.emojize(':fox:')}-{hash(str(self.creation_time).replace(' ', '-'))}"
