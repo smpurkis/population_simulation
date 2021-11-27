@@ -1,19 +1,16 @@
 import random
 from datetime import datetime as dt
-from typing import Tuple
 
-import numpy as np
+from entities.BaseEntity import BaseEntity
 
 
-class BaseEntity:
-    def __init__(self, colour: str = "black", position: Tuple[int, int] = None, speed: int = 0):
+class BaseAnimal(BaseEntity):
+    def __init__(self, colour: str = "black", board_size: float = 10, speed: int = 0):
+        super().__init__(colour, board_size, speed)
         self.speed = speed
         self.colour = colour
+        self.board_size = board_size
         self.creation_time = dt.now().time()
-        self.position = position
-
-    def __str__(self):
-        raise NotImplementedError("This is a Base Class, don't call this!")
 
     def move(self, available_positions=None):
         if available_positions is None:

@@ -2,11 +2,10 @@ from typing import Tuple
 
 import numpy as np
 
-from BaseEntity import BaseEntity
-from Fox import Fox
-from Grass import Grass
-from Ground import Ground
-from Pig import Pig
+from entities.BaseEntity import BaseEntity
+from entities.Fox import Fox
+from entities.Grass import Grass
+from entities.Pig import Pig
 
 np.set_printoptions(linewidth=1000)
 
@@ -14,29 +13,18 @@ np.set_printoptions(linewidth=1000)
 class WorldBoard:
     def __init__(self, size: Tuple[int, int] = (100, 100)):
         self.size = size
-        self.positions = np.full(shape=size, fill_value=Ground())
-        self.objects = []
-
-    def __str__(self):
-        pos_str = self.positions.astype(str)
-        char_to_show = 1
-        for ix, iy in np.ndindex(pos_str.shape):
-            pos_str[ix, iy] = pos_str[ix, iy].ljust(char_to_show)[:char_to_show]
-        return str(pos_str)
+        self.objects = {}
 
     def spawn(self, entity_type: str, number_to_spawn: int = 100):
         for i in range(number_to_spawn):
-            available_positions = np.argwhere(self.positions.astype(str) == Ground.string)
-            random_empty_position = rep = available_positions[np.random.choice(available_positions.shape[0])]
-            entity = Ground()
+            entity = None
             if entity_type == "grass":
-                entity = Grass(position=random_empty_position)
+                entity = Grass()
             elif entity_type == "pig":
-                entity = Pig(position=random_empty_position)
+                entity = Pig()
             elif entity_type == "fox":
-                entity = Fox(position=random_empty_position)
-            self.positions[tuple(rep)] = entity
-            self.objects.append(entity)
+                entity = Fox()
+            self.objects[entity_type].append(entity)
 
     def spawn_plants(self, number_to_spawn: int = 10):
         self.spawn(entity_type="grass", number_to_spawn=number_to_spawn)
@@ -47,37 +35,7 @@ class WorldBoard:
     def spawn_foxes(self, number_to_spawn: int = 2):
         self.spawn(entity_type="fox", number_to_spawn=number_to_spawn)
 
-    def get_available_positions(self, entity: BaseEntity):
-        i, j = entity.position
-        li, hi = max(i-1, 0), min(i+2, self.size[0])
-        lj, hj = max(j-1, 0), min(j+2, self.size[1])
-        area = self.positions[li:hi, lj:hj]
-        available_positions = list(np.where((area != Ground()) & (area != entity)))
-        available_positions[0] += li
-        available_positions[1] += lj
-        available_positions = tuple(zip(available_positions[0], available_positions[1]))
-        return available_positions
+    def move_animals(self):
+        for animal in self.objects["fox"] + self.objects["pig"]:
+            animal.move()
 
-    def move_foxes(self):
-        foxes = [e for e in self.objects if isinstance(e, Fox)]
-        for fox in foxes:
-            available_positions = self.get_available_positions(fox)
-
-            current_position = tuple(fox.position)
-
-            chosen_position = fox.move(available_positions)
-
-            self.positions[current_position] = Ground()
-            self.positions[chosen_position] = fox
-            # fox_positions = np.argwhere(self.positions.astype(str) == str(Fox()))
-
-    def move_pigs(self):
-        pigs = [e for e in self.objects if isinstance(e, Pig)]
-        for pig in pigs:
-            available_positions = self.get_available_positions(pig)
-            current_position = tuple(pig.position)
-
-            chosen_position = pig.move(available_positions)
-
-            self.positions[current_position] = Ground()
-            self.positions[chosen_position] = pig
