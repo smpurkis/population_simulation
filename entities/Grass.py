@@ -1,4 +1,4 @@
-from BaseEntity import BaseEntity
+from entities.BaseEntity import BaseEntity
 
 
 class Grass(BaseEntity):
