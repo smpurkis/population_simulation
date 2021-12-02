@@ -14,4 +14,19 @@ The aims of this project are as such:
 Ideas:
 - Boundaries:
   - Water
-  - 
+
+
+Todos:
+
+- Add hunger rate
+    - Number of steps per day
+    - Add background colour for day/night cycle
+- Add temperature
+- Add weather
+- Add seasons
+- Add reproduction
+  - Add death
+  - Add birth
+- Add vision
+- Add hearing
+- 

@@ -7,12 +7,16 @@ class BaseEntity:
     def __init__(
             self,
             colour: str = "black",
-            board_size: Tuple[float, float] = (100, 100),
+            board_size: Tuple[float] = (100, 100),
     ):
         self.colour = colour
         self.board_size = board_size
         self.creation_time = dt.now().time()
         self.set_random_position()
+        self.age = 0
+        self.death_age = 0
+        self.show = True
+        self.alive = True
 
     def set_random_position(self):
         """
