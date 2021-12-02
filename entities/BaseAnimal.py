@@ -7,8 +7,8 @@ from entities.BaseEntity import BaseEntity
 
 
 class BaseAnimal(BaseEntity):
-    def __init__(self, speed: float = 0, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, colour: str, speed: float = 0, *args, **kwargs):
+        super().__init__(colour, *args, **kwargs)
         self.speed = speed
         self._max_speed = speed
         self.hunger = 100

@@ -1,13 +1,15 @@
 import random
 from datetime import datetime as dt
-from typing import Tuple
+from typing import Tuple, Optional
+
+from matplotlib.lines import Line2D
 
 
 class BaseEntity:
     def __init__(
-            self,
-            colour: str = "black",
-            board_size: Tuple[float] = (100, 100),
+        self,
+        colour,
+        board_size: Tuple[float, float] = (100.0, 100.0),
     ):
         self.colour = colour
         self.board_size = board_size
@@ -17,6 +19,8 @@ class BaseEntity:
         self.death_age = 0
         self.show = True
         self.alive = True
+        self.position: Tuple[float, float] = (0.0, 0.0)
+        self.point: Optional[Line2D]
 
     def set_random_position(self):
         """
@@ -25,5 +29,5 @@ class BaseEntity:
         """
         self.position = [
             random.uniform(0, self.board_size[0]),
-            random.uniform(0, self.board_size[1])
+            random.uniform(0, self.board_size[1]),
         ]
