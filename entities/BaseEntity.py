@@ -38,24 +38,31 @@ class BaseEntity(object):
         ]
         return position
 
-    def update_health(self):
+    def update_death_age(self):
+        """
+        Updates the death age of the animal
+        :return:
+        """
+        # If the entity is dead, increment its death age
+        self.death_age += 1
+
+        # hide the entity after 50 steps
+        if self.death_age >= 50:
+            self.show = False
+        elif self.death_age > 25:
+            # if entity is halfway through decaying, change colour to grey
+            self.colour = "grey"
+
+    def update_status(self):
         """
         Checks if the animal is healthy
         :return:
         """
-        # If the entity is dead, increment it's death age
         if not self.alive:
-            self.death_age += 1
-
-            # hide the entity after 50 steps
-            if self.death_age >= 50:
-                self.show = False
-            elif self.death_age > 25:
-                self.colour = "grey"
+            self.update_death_age()
 
     def step(self, entities):
-        self.update_health()
-        raise NotImplementedError
+        self.update_status()
 
     def distance_from_entity(self, entity) -> float:
         """

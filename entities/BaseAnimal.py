@@ -13,6 +13,8 @@ class BaseAnimal(BaseEntity):
         colour: str,
         speed: float = 0,
         food_class: str = None,
+        eating_penalty: int = 0,
+        max_health: int = 100,
         *args,
         **kwargs
     ):
@@ -23,6 +25,9 @@ class BaseAnimal(BaseEntity):
         self.hunger = 100
         self.vision_radius = 100
         self.eat_radius = 1
+        self.eating_penalty = eating_penalty
+        self.skip_action_counter = 0
+        self._max_health = max_health
 
     def random_move(self):
         """
@@ -76,30 +81,29 @@ class BaseAnimal(BaseEntity):
         self.speed = 0
         self.death_age = 1
 
-    def update_health(self):
+    def update_status(self):
         """
         Checks if the animal is healthy
         :return:
         """
         # If the animal is dead, increment it's death age
         if not self.alive:
-            self.death_age += 1
-
-            # hide the entity after 50 steps
-            if self.death_age >= 50:
-                self.show = False
-            elif self.death_age > 25:
-                self.colour = "grey"
+            self.update_death_age()
+            return
 
         # If the animal's health is less than 0, it dies
         if self.health == 0 and self.alive:
             self.die()
         elif self.hunger <= 0 and self.alive:
-            # if the animals hunger is zero, it starts losting health
+            # if the animals hunger is 0, it starts losing health
             self.health -= 1
-        elif self.hunger < 50:
-            # if the animals hunger is less than 50, it's speed is cut in half
+
+        health_penalty_threshold = self._max_health * 0.5
+        if self.health < health_penalty_threshold:
+            # if the animals health is less than 50, it's speed is cut in half
             self.speed = 0.5 * self._max_speed
+        elif self.health >= health_penalty_threshold:
+            self.speed = self._max_speed
 
     def step(self, entities: List[BaseEntity]):
         """
@@ -107,9 +111,12 @@ class BaseAnimal(BaseEntity):
         :return:
         """
         self.world_area.update(entities)
-        self.update_health()
+        self.update_status()
         self.update_hunger()
-        self.choose_action()
+        if self.skip_action_counter > 0:
+            self.skip_action_counter -= 1
+        else:
+            self.choose_action()
 
     def choose_action(self):
         """
@@ -154,5 +161,7 @@ class BaseAnimal(BaseEntity):
         return angle
 
     def eat_entity(self, entity: BaseEntity):
-        self.hunger += entity.health
+        self.skip_action_counter = self.eating_penalty
+        self.health += entity.health
+        self.hunger = 100
         entity.die()

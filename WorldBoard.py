@@ -16,8 +16,8 @@ class WorldBoard:
     def __init__(self, board_size: Tuple[float, float] = (100.0, 100.0)):
         self.board_size = board_size
         self.entities_dict: Dict[str, List[BaseEntity]] = {}
-        self.alive_animals: List[BaseAnimal] = []
         self.entity_list: List[BaseEntity] = []
+        self.showing_entities: List[BaseEntity] = []
         self.day: int = 0
         self._setup_plot()
 
@@ -40,7 +40,7 @@ class WorldBoard:
             self.entities_dict[entity_class].append(entity)
             self.entity_list.append(entity)
             if isinstance(entity, BaseAnimal):
-                self.alive_animals.append(entity)
+                self.showing_entities.append(entity)
 
     def spawn_all_entities(self, initial_populations: Dict[str, int]):
         self.spawn_plants(number_to_spawn=initial_populations["grass"])
@@ -71,16 +71,15 @@ class WorldBoard:
     def step(self):
         self.day += 1
 
-        self.alive_animals = [entity for entity in self.alive_animals if entity.alive]
+        self.showing_entities = [entity for entity in self.entity_list if entity.show]
 
-        for animal in self.alive_animals:
+        for animal in self.showing_entities:
             animal.step(self.entity_list)
 
         if self.day % 1 == 0:
             spawn_plants = random.randrange(100) <= 2
             if spawn_plants:
                 number_to_spawn = random.choice(range(1, 4))
-                # number_to_spawn = 1
                 self.spawn_plants(number_to_spawn=number_to_spawn)
 
     def _setup_plot(self):
