@@ -8,9 +8,11 @@ from matplotlib.lines import Line2D
 class BaseEntity(object):
     def __init__(
         self,
-        colour,
+        entity_class: str = None,
+        colour: str = None,
         board_size: Tuple[float, float] = (100.0, 100.0),
     ):
+        self.entity_class = entity_class
         self.vision_radius = 0
         self.point = None
         self.colour = colour
@@ -23,6 +25,7 @@ class BaseEntity(object):
         self.position: List[float, float] = self.set_random_position()
         self.point: Optional[Line2D]
         self.world_area = None
+        self.health = 100
 
     def set_random_position(self) -> List[float]:
         """
@@ -35,7 +38,23 @@ class BaseEntity(object):
         ]
         return position
 
-    def step(self):
+    def update_health(self):
+        """
+        Checks if the animal is healthy
+        :return:
+        """
+        # If the entity is dead, increment it's death age
+        if not self.alive:
+            self.death_age += 1
+
+            # hide the entity after 50 steps
+            if self.death_age >= 50:
+                self.show = False
+            elif self.death_age > 25:
+                self.colour = "grey"
+
+    def step(self, entities):
+        self.update_health()
         raise NotImplementedError
 
     def distance_from_entity(self, entity) -> float:
@@ -57,14 +76,24 @@ class BaseEntity(object):
         distance = (x_distance ** 2 + y_distance ** 2) ** 0.5
         return distance
 
-    def find_nearest_entity(self, entity_type=None):
+    def die(self):
+        """
+        Kills the animal
+        :return:
+        """
+        self.alive = False
+        self.colour = "black"
+        self.speed = 0
+        self.death_age = 1
+
+    def find_nearest_entity(self, entity_class=None):
         """
         Find the nearest entity to the current entity
-        :param entity_type: find nearest entity of this type
+        :param entity_class: find nearest entity of this type
         :return:
         """
         nearest_entity = None
-        if entity_type is None:
+        if entity_class is None:
             if len(self.world_area.entities_in_radius) == 0:
                 return None
             return self.world_area.entities_in_radius[0]
@@ -72,7 +101,7 @@ class BaseEntity(object):
             for entity in [
                 e
                 for e in self.world_area.entities_in_radius
-                if isinstance(e, entity_type)
+                if e.entity_class == entity_class and e.alive
             ]:
                 if nearest_entity is None:
                     nearest_entity = entity

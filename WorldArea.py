@@ -28,3 +28,6 @@ class WorldArea:
 
     def is_entity_in_radius(self, entity: BaseEntity):
         return entity.distance_from_point(self.position) <= self.area_radius
+
+    def update(self, entities: List[BaseEntity]):
+        self.entities_in_radius = self.set_entities_in_radius(entities)
