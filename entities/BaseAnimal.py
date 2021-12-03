@@ -13,16 +13,44 @@ class BaseAnimal(BaseEntity):
         self._max_speed = speed
         self.hunger = 100
         self.health = 100
+        self.vision_radius = 100
+        self.eat_radius = 5
 
     def move(self):
+        """
+        Moves the animal
+        :return:
+        """
+        self.random_move()
+
+    def random_move(self):
         """
         Moves the animal in a random direction
         :return:
         """
         move_distance = random.uniform(0, self.speed)
-        random_angle = random.randint(90, 100)
+        random_angle = random.randint(0, 360)
         x_step = move_distance * np.cos(np.deg2rad(random_angle))
         y_step = move_distance * np.sin(np.deg2rad(random_angle))
+
+        new_position = [self.position[0] + x_step, self.position[1] + y_step]
+        self.position = self.correct_boundaries(new_position)
+
+        return self.position
+
+    def move_towards(self, entity: BaseEntity):
+        return self.move_towards_position(entity.position)
+
+    def move_towards_position(self, position: List[float]):
+        """
+        Moves the animal towards the position
+        :param position:
+        :return:
+        """
+        distance_away = self.distance_from_point(position)
+        move_distance = min(self.speed, distance_away)
+        x_step = move_distance * np.cos(np.deg2rad(self.angle_to(position)))
+        y_step = move_distance * np.sin(np.deg2rad(self.angle_to(position)))
 
         new_position = [self.position[0] + x_step, self.position[1] + y_step]
         self.position = self.correct_boundaries(new_position)
@@ -60,6 +88,7 @@ class BaseAnimal(BaseEntity):
         Performs the step of the animal
         :return:
         """
+        # self.update_radius()
         self.move()
         self.update_hunger()
         self.update_health()
@@ -80,3 +109,14 @@ class BaseAnimal(BaseEntity):
         elif new_position[1] >= self.board_size[1]:
             new_position[1] = 0
         return new_position
+
+    def angle_to(self, position):
+        """
+        Calculates the angle to the position
+        :param position:
+        :return:
+        """
+        x_diff = position[0] - self.position[0]
+        y_diff = position[1] - self.position[1]
+        angle = np.rad2deg(np.arctan2(y_diff, x_diff))
+        return angle
