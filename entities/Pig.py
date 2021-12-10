@@ -9,7 +9,7 @@ class Pig(BaseAnimal):
         base_speed: float = 0.5,
         food_class: str = "grass",
         base_eating_penalty: int = 1,
-        base_vision_radius: int = 40,
+        base_vision_radius: int = 100,
         base_health: int = 100,
         base_hunger: int = 100,
         *args,

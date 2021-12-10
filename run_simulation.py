@@ -14,6 +14,6 @@ if __name__ == "__main__":
     # initial conditions
     board_size = (100, 100)
 
-    initial_spawns = dict(grass=2, pig=1, fox=0)
+    initial_spawns = dict(grass=10, pig=1, fox=0)
 
     game_loop(board_size, initial_spawns)

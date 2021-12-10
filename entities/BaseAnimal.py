@@ -96,7 +96,7 @@ class BaseAnimal(BaseEntity):
         :return:
         """
         if self.hunger > 0:
-            self.hunger -= 10
+            self.hunger -= 1
 
     def die(self):
         """
@@ -122,7 +122,7 @@ class BaseAnimal(BaseEntity):
                 # if the animals hunger is 0, it starts losing health
                 self.health -= 1
 
-            health_penalty_threshold = self._max_health * 0.5
+            health_penalty_threshold = self._base_hunger * 0.5
             if self.health < health_penalty_threshold:
                 # if the animals health is less than 50% max health, it's speed is cut in half
                 self.speed = 0.5 * self._base_speed

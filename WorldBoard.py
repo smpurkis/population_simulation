@@ -31,7 +31,11 @@ class WorldBoard:
             elif entity_class == "fox":
                 entity = Fox(board_size=self.board_size)
             (point,) = self.ax.plot(
-                [entity.position[0]], [entity.position[1]], "o", color=entity.colour
+                [entity.position[0]],
+                [entity.position[1]],
+                "o",
+                color=entity.colour,
+                markersize=60 / (self.board_size[0] ** 0.5),
             )
             entity.point = point
 
@@ -77,9 +81,14 @@ class WorldBoard:
             animal.step(self.entity_list)
 
         if self.day % 1 == 0:
+            base_number_to_spawn = int(
+                float(self.board_size[0] * self.board_size[1] / 100 ** 2) ** 0.75
+            )
             spawn_plants = random.randrange(100) <= 2
             if spawn_plants:
-                number_to_spawn = random.choice(range(1, 4))
+                number_to_spawn = random.choice(
+                    range(base_number_to_spawn, 4 * base_number_to_spawn)
+                )
                 self.spawn_plants(number_to_spawn=number_to_spawn)
 
     def _setup_plot(self):
