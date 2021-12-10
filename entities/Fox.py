@@ -12,8 +12,10 @@ class Fox(BaseAnimal):
         base_vision_radius: int = 200,
         base_health: int = 500,
         base_hunger: int = 100,
+        base_lifespan: int = 10_000,
+        base_reproduce_cycle: int = 1_000,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             entity_class=entity_class,
@@ -24,6 +26,8 @@ class Fox(BaseAnimal):
             base_vision_radius=base_vision_radius,
             base_health=base_health,
             base_hunger=base_hunger,
+            base_lifespan=base_lifespan,
+            base_reproduce_cycle=base_reproduce_cycle,
             *args,
-            **kwargs
+            **kwargs,
         )

@@ -33,9 +33,9 @@ class WorldBoard:
             (point,) = self.ax.plot(
                 [entity.position[0]],
                 [entity.position[1]],
-                "o",
+                "x" if entity_class == "grass" else "o",
                 color=entity.colour,
-                markersize=60 / (self.board_size[0] ** 0.5),
+                markersize=80 / (self.board_size[0] ** 0.5),
             )
             entity.point = point
 
@@ -81,8 +81,9 @@ class WorldBoard:
             animal.step(self.entity_list)
 
         if self.day % 1 == 0:
+            # TODO: Make this a function and improve the mechanics of grass spawning
             base_number_to_spawn = int(
-                float(self.board_size[0] * self.board_size[1] / 100 ** 2) ** 0.75
+                float(self.board_size[0] * self.board_size[1] / 100 ** 2) ** 0.5
             )
             spawn_plants = random.randrange(100) <= 2
             if spawn_plants:
@@ -97,7 +98,7 @@ class WorldBoard:
 
     def plot_world(self):
         """
-        Plots all the entites by their position on a matplotlib graph
+        Plots all the entities by their position on a matplotlib graph
         :return:
         """
         self.ax.set_xlim(0, self.board_size[0])

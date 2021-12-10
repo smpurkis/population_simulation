@@ -12,8 +12,10 @@ class Pig(BaseAnimal):
         base_vision_radius: int = 100,
         base_health: int = 100,
         base_hunger: int = 100,
+        base_lifespan: int = 2_000,
+        base_reproduce_cycle: int = 200,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             entity_class=entity_class,
@@ -24,6 +26,8 @@ class Pig(BaseAnimal):
             base_vision_radius=base_vision_radius,
             base_health=base_health,
             base_hunger=base_hunger,
+            base_lifespan=base_lifespan,
+            base_reproduce_cycle=base_reproduce_cycle,
             *args,
-            **kwargs
+            **kwargs,
         )

@@ -26,6 +26,7 @@ class BaseEntity(object):
         self.point: Optional[Line2D]
         self.world_area = None
         self.health = 100
+        self.lifespan = 200
 
     def set_random_position(self) -> List[float]:
         """
@@ -47,9 +48,9 @@ class BaseEntity(object):
         self.death_age += 1
 
         # hide the entity after 50 steps
-        if self.death_age >= 50:
+        if self.death_age >= 20:
             self.show = False
-        elif self.death_age > 25:
+        elif self.death_age > 10:
             # if entity is halfway through decaying, change colour to grey
             self.colour = "grey"
 
@@ -58,7 +59,11 @@ class BaseEntity(object):
         Checks if the animal is healthy
         :return:
         """
-        if not self.alive:
+        self.age += 1
+        if self.alive:
+            if self.age >= self.lifespan:
+                self.die()
+        else:
             self.update_death_age()
 
     def step(self, entities):
@@ -128,6 +133,8 @@ class BaseEntity(object):
                 for e in self.world_area.entities_in_radius
                 if e.entity_class == entity_class and e.alive
             ]:
+                if entity == self:
+                    continue
                 if nearest_entity is None:
                     nearest_entity = entity
                 elif self.distance_from_entity(entity) < self.distance_from_entity(

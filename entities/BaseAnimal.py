@@ -18,6 +18,8 @@ class BaseAnimal(BaseEntity):
         base_vision_radius: int = 10,
         base_health: int = 100,
         base_hunger: int = 100,
+        base_lifespan: int = 200,
+        base_reproduce_cycle: int = 50,
         *args,
         **kwargs,
     ):
@@ -25,6 +27,8 @@ class BaseAnimal(BaseEntity):
         self.food_class = food_class
         self.eat_radius = 1
         self.skip_action_counter = 0
+        self.reproduce_ready = False
+        self.reproduce_counter = 0
         self.genes = Genes()
 
         self._base_speed = base_speed
@@ -42,6 +46,12 @@ class BaseAnimal(BaseEntity):
         self._base_health = base_health
         self._max_health = 1_000
 
+        self._base_lifespan = base_lifespan
+        self._max_lifespan = 10 * base_lifespan
+
+        self._base_reproduce_cycle = base_reproduce_cycle
+        self._max_reproduce_cycle = 5 * base_reproduce_cycle
+
         self.initial_attributes()
 
     def initial_attributes(self):
@@ -55,6 +65,13 @@ class BaseAnimal(BaseEntity):
         )
         self.hunger = min(self.genes.hunger * self._base_hunger, self._max_hunger)
         self.health = min(self.genes.health * self._base_health, self._max_health)
+        self.lifespan = min(
+            self.genes.lifespan * self._base_lifespan, self._max_lifespan
+        )
+        self.reproduce_cycle = min(
+            self.genes.reproduce_cycle * self._base_reproduce_cycle,
+            self._max_reproduce_cycle,
+        )
 
     def random_move(self):
         """
@@ -96,7 +113,7 @@ class BaseAnimal(BaseEntity):
         :return:
         """
         if self.hunger > 0:
-            self.hunger -= 1
+            self.hunger -= 5
 
     def die(self):
         """
@@ -113,6 +130,7 @@ class BaseAnimal(BaseEntity):
         Checks if the animal is healthy
         :return:
         """
+        self.age += 1
 
         if self.alive:
             # if the animal's health is less than 0, it dies
@@ -133,6 +151,9 @@ class BaseAnimal(BaseEntity):
             self.update_death_age()
             self.speed = 0
 
+        if self.age > self.lifespan:
+            self.die()
+
     def step(self, entities: List[BaseEntity]):
         """
         Performs the step of the animal
@@ -141,6 +162,7 @@ class BaseAnimal(BaseEntity):
         self.world_area.update(entities)
         self.update_status()
         self.update_hunger()
+        self.update_reproduction()
         if self.skip_action_counter > 0:
             self.skip_action_counter -= 1
         else:
@@ -151,12 +173,21 @@ class BaseAnimal(BaseEntity):
         Chooses an action for the animal
         :return:
         """
-        entity = self.find_nearest_entity(entity_class=self.food_class)
-        if entity is not None:
-            if self.distance_from_point(entity.position) < self.eat_radius:
-                self.eat_entity(entity)
+        nearest_food_entity = self.find_nearest_entity(entity_class=self.food_class)
+        nearest_companion_entity = self.find_nearest_entity(
+            entity_class=self.entity_class
+        )
+        if nearest_companion_entity is not None and self.reproduce_ready:
+            if self.distance_from_entity(nearest_companion_entity) < self.eat_radius:
+                self.reproduce_with(nearest_companion_entity)
             else:
-                self.move_towards(entity)
+                self.move_towards(nearest_companion_entity)
+
+        elif nearest_food_entity is not None:
+            if self.distance_from_entity(nearest_food_entity) < self.eat_radius:
+                self.eat_entity(nearest_food_entity)
+            else:
+                self.move_towards(nearest_food_entity)
         else:
             self.random_move()
 
@@ -193,3 +224,12 @@ class BaseAnimal(BaseEntity):
         self.health += entity.health
         self.hunger = 100
         entity.die()
+
+    def update_reproduction(self):
+        if self.age // self.reproduce_cycle > self.reproduce_counter:
+            self.reproduce_ready = True
+
+    def reproduce_with(self, nearest_companion_entity: BaseEntity):
+        # TODO: work out logic of how to add to the world board from this class
+        self.reproduce_ready = False
+        nearest_companion_entity.reproduce_ready = False
