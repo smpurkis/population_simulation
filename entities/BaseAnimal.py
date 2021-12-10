@@ -3,6 +3,7 @@ from typing import List
 
 import numpy as np
 
+from Genes import Genes
 from entities.BaseEntity import BaseEntity
 
 
@@ -11,23 +12,49 @@ class BaseAnimal(BaseEntity):
         self,
         entity_class,
         colour: str,
-        speed: float = 0,
+        base_speed: float = 0,
         food_class: str = None,
-        eating_penalty: int = 0,
-        max_health: int = 100,
+        base_eating_penalty: int = 0,
+        base_vision_radius: int = 10,
+        base_health: int = 100,
+        base_hunger: int = 100,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(entity_class, colour, *args, **kwargs)
         self.food_class = food_class
-        self.speed = speed
-        self._max_speed = speed
-        self.hunger = 100
-        self.vision_radius = 100
         self.eat_radius = 1
-        self.eating_penalty = eating_penalty
         self.skip_action_counter = 0
-        self._max_health = max_health
+        self.genes = Genes()
+
+        self._base_speed = base_speed
+        self._max_speed = 1.5 * base_speed
+
+        self._base_vision_radius = base_vision_radius
+        self._max_vision_radius = 100
+
+        self._base_eating_penalty = base_eating_penalty
+        self._max_eating_penalty = 50
+
+        self._base_hunger = base_hunger
+        self._max_hunger = 500
+
+        self._base_health = base_health
+        self._max_health = 1_000
+
+        self.initial_attributes()
+
+    def initial_attributes(self):
+        self.speed = min(self.genes.speed * self._base_speed, self._max_speed)
+        self.vision_radius = min(
+            self.genes.vision_radius * self._base_vision_radius, self._max_vision_radius
+        )
+        self.eating_penalty = min(
+            self.genes.eating_penalty * self._base_eating_penalty,
+            self._max_eating_penalty,
+        )
+        self.hunger = min(self.genes.hunger * self._base_hunger, self._max_hunger)
+        self.health = min(self.genes.health * self._base_health, self._max_health)
 
     def random_move(self):
         """
@@ -69,7 +96,7 @@ class BaseAnimal(BaseEntity):
         :return:
         """
         if self.hunger > 0:
-            self.hunger -= 1
+            self.hunger -= 10
 
     def die(self):
         """
@@ -86,24 +113,25 @@ class BaseAnimal(BaseEntity):
         Checks if the animal is healthy
         :return:
         """
-        # If the animal is dead, increment it's death age
-        if not self.alive:
+
+        if self.alive:
+            # if the animal's health is less than 0, it dies
+            if self.health <= 0:
+                self.die()
+            elif self.hunger <= 0:
+                # if the animals hunger is 0, it starts losing health
+                self.health -= 1
+
+            health_penalty_threshold = self._max_health * 0.5
+            if self.health < health_penalty_threshold:
+                # if the animals health is less than 50% max health, it's speed is cut in half
+                self.speed = 0.5 * self._base_speed
+            elif self.health >= health_penalty_threshold:
+                self.speed = self._base_speed
+        else:
+            # if the animal is dead, increment its death age
             self.update_death_age()
-            return
-
-        # If the animal's health is less than 0, it dies
-        if self.health == 0 and self.alive:
-            self.die()
-        elif self.hunger <= 0 and self.alive:
-            # if the animals hunger is 0, it starts losing health
-            self.health -= 1
-
-        health_penalty_threshold = self._max_health * 0.5
-        if self.health < health_penalty_threshold:
-            # if the animals health is less than 50, it's speed is cut in half
-            self.speed = 0.5 * self._max_speed
-        elif self.health >= health_penalty_threshold:
-            self.speed = self._max_speed
+            self.speed = 0
 
     def step(self, entities: List[BaseEntity]):
         """

@@ -1,15 +1,15 @@
 import random
 import time
 from copy import copy
-from typing import Tuple, List, Dict, Optional
+from typing import Tuple, List, Dict
 
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
 from WorldArea import WorldArea
 from entities import Fox, Grass, Pig
-from entities.BaseEntity import BaseEntity
 from entities.BaseAnimal import BaseAnimal
+from entities.BaseEntity import BaseEntity
 
 
 class WorldBoard:
@@ -113,6 +113,9 @@ class WorldBoard:
                 time_taken = time.time() - stationary_time
                 avg_time = 1000 * (time_taken / self.day)
                 print(f"day: {self.day}, time: {time_taken}, average: {avg_time:.2f}ms")
+                print(
+                    f"Grass: {len([e for e in self.entities_dict.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict.get('fox', []) if e.alive])}"
+                )
 
-        ani = animation.FuncAnimation(self.fig, update_plot, interval=40)
+        ani = animation.FuncAnimation(self.fig, update_plot, interval=20)
         plt.show()
