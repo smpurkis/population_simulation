@@ -78,9 +78,27 @@ class BaseEntity(object):
         :param position:
         :return:
         """
-        x_distance = abs(self.position[0] - position[0])
-        y_distance = abs(self.position[1] - position[1])
-        distance = (x_distance ** 2 + y_distance ** 2) ** 0.5
+        return self.distance_between_points(self.position, position, self.board_size)
+
+    @staticmethod
+    def distance_between_points(
+        point_1: List[float], point_2: List[float], board_size: Tuple[float]
+    ) -> float:
+        """
+        Calculates the distance between two points on the board.
+        Taking into account wrapping around the board
+        :param point_1:
+        :param point_2:
+        :param board_size:
+        :return:
+        """
+        x_distance = min(
+            abs(point_1[0] - point_2[0]), board_size[0] - abs(point_1[0] - point_2[0])
+        )
+        y_distance = min(
+            abs(point_1[1] - point_2[1]), board_size[1] - abs(point_1[1] - point_2[1])
+        )
+        distance = x_distance + y_distance
         return distance
 
     def die(self):
