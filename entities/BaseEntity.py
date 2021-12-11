@@ -6,6 +6,10 @@ from matplotlib.lines import Line2D
 
 
 class BaseEntity(object):
+    """
+    Base class for all entities.
+    """
+
     def __init__(
         self,
         entity_class: str = None,
@@ -67,6 +71,11 @@ class BaseEntity(object):
             self.update_death_age()
 
     def step(self, entities):
+        """
+        Takes the next step for this animal
+        :param entities:
+        :return:
+        """
         self.update_status()
 
     def distance_from_entity(self, entity) -> float:

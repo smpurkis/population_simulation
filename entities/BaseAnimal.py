@@ -8,6 +8,10 @@ from entities.BaseEntity import BaseEntity
 
 
 class BaseAnimal(BaseEntity):
+    """
+    Base class for all animals, inherits from BaseEntity
+    """
+
     def __init__(
         self,
         entity_class,
@@ -55,6 +59,10 @@ class BaseAnimal(BaseEntity):
         self.initial_attributes()
 
     def initial_attributes(self):
+        """
+        Set the attributes of the animal, altered by its genes
+        :return:
+        """
         self.speed = min(self.genes.speed * self._base_speed, self._max_speed)
         self.vision_radius = min(
             self.genes.vision_radius * self._base_vision_radius, self._max_vision_radius
@@ -88,10 +96,10 @@ class BaseAnimal(BaseEntity):
 
         return self.position
 
-    def move_towards(self, entity: BaseEntity):
+    def move_towards(self, entity: BaseEntity) -> List[float]:
         return self.move_towards_position(entity.position)
 
-    def move_towards_position(self, position: List[float]):
+    def move_towards_position(self, position: List[float]) -> List[float]:
         """
         Moves the animal towards the position
         :param position:
@@ -220,16 +228,33 @@ class BaseAnimal(BaseEntity):
         return angle
 
     def eat_entity(self, entity: BaseEntity):
+        """
+        Eats the entity
+        gains the health of the entity and sets hunger to base hunger
+        :param entity:
+        :return:
+        """
         self.skip_action_counter = self.eating_penalty
         self.health += entity.health
-        self.hunger = 100
+        self.health = min(self.health, self._max_health)
+        self.hunger = self._base_hunger
         entity.die()
 
     def update_reproduction(self):
+        """
+        The animal can reproduce if it is older than its reproduce_cycle duration
+        :return:
+        """
         if self.age // self.reproduce_cycle > self.reproduce_counter:
             self.reproduce_ready = True
 
     def reproduce_with(self, nearest_companion_entity: BaseEntity):
+        """
+        The animal reproduces with the nearest companion animal of the same species
+        Their genes are combined and the mating animal becomes pregnant for a duration
+        :param nearest_companion_entity:
+        :return:
+        """
         # TODO: work out logic of how to add to the world board from this class
         self.reproduce_ready = False
         nearest_companion_entity.reproduce_ready = False

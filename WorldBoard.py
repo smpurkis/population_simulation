@@ -73,6 +73,7 @@ class WorldBoard:
         self.spawn(entity_class="fox", number_to_spawn=number_to_spawn)
 
     def step(self):
+        # TODO - Investigate parallel choose_action events
         self.day += 1
 
         self.showing_entities = [entity for entity in self.entity_list if entity.show]
