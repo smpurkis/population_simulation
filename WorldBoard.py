@@ -6,6 +6,7 @@ from typing import Tuple, List, Dict
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
+from Genes import Genes
 from WorldArea import WorldArea
 from entities import Fox, Grass, Pig
 from entities.BaseAnimal import BaseAnimal
@@ -47,10 +48,49 @@ class WorldBoard:
                 self.showing_entities.append(entity)
 
     def spawn_all_entities(self, initial_populations: Dict[str, int]):
+        self.initial_populations = initial_populations
         self.spawn_plants(number_to_spawn=initial_populations["grass"])
         self.spawn_pigs(number_to_spawn=initial_populations["pig"])
         self.spawn_foxes(number_to_spawn=initial_populations["fox"])
         self.set_world_areas()
+
+    def spawn_child_animal(
+        self, parent_animal: BaseAnimal, entity_class: str, genes: Genes
+    ):
+        """
+        Spawns an animal with the given genes
+        """
+        animal: BaseAnimal = None
+        if entity_class == "fox":
+            animal = Fox(board_size=self.board_size, genes=genes)
+        elif entity_class == "pig":
+            animal = Pig(board_size=self.board_size, genes=genes)
+
+        # set animal to same location as the parent
+        animal.position = parent_animal.position
+
+        # give a chance for the parent to move away from the child
+        animal.skip_action_counter = 40
+
+        (point,) = self.ax.plot(
+            [animal.position[0]],
+            [animal.position[1]],
+            "o",
+            color=animal.colour,
+            markersize=80 / (self.board_size[0] ** 0.5),
+        )
+        animal.point = point
+        other_entities = copy(self.entity_list)
+        world_area = WorldArea(
+            area_radius=animal.vision_radius,
+            entities=other_entities,
+            position=animal.position,
+        )
+        animal.world_area = world_area
+        self.entity_list.append(animal)
+        self.entities_dict[entity_class].append(animal)
+        if isinstance(animal, BaseAnimal):
+            self.showing_entities.append(animal)
 
     def set_world_areas(self):
         for entity in self.entity_list:
@@ -79,14 +119,18 @@ class WorldBoard:
         self.showing_entities = [entity for entity in self.entity_list if entity.show]
 
         for animal in self.showing_entities:
-            animal.step(self.entity_list)
+            output = animal.step(self.entity_list)
+            if output is not None:
+                self.spawn_child_animal(animal, animal.entity_class, output)
 
         if self.day % 1 == 0:
             # TODO: Make this a function and improve the mechanics of grass spawning
-            base_number_to_spawn = int(
-                float(self.board_size[0] * self.board_size[1] / 100 ** 2) ** 0.5
+            base_number_to_spawn = (
+                self.initial_populations["grass"]
+                // 100
+                * int(float(self.board_size[0] * self.board_size[1] / 100 ** 2) ** 0.5)
             )
-            spawn_plants = random.randrange(100) <= 2
+            spawn_plants = random.randrange(100) <= 5
             if spawn_plants:
                 number_to_spawn = random.choice(
                     range(base_number_to_spawn, 4 * base_number_to_spawn)

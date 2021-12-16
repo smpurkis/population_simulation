@@ -3,7 +3,7 @@ from typing import List
 
 import numpy as np
 
-from Genes import Genes
+from Genes import Genes, combined_genes
 from entities.BaseEntity import BaseEntity
 
 
@@ -24,6 +24,7 @@ class BaseAnimal(BaseEntity):
         base_hunger: int = 100,
         base_lifespan: int = 200,
         base_reproduce_cycle: int = 50,
+        genes: Genes = None,
         *args,
         **kwargs,
     ):
@@ -33,7 +34,10 @@ class BaseAnimal(BaseEntity):
         self.skip_action_counter = 0
         self.reproduce_ready = False
         self.reproduce_counter = 0
-        self.genes = Genes()
+        self.days_to_birth = None
+        self.with_child = False
+        self.child_genes: Genes = None
+        self.genes: Genes = genes if genes is not None else Genes()
 
         self._base_speed = base_speed
         self._max_speed = 1.5 * base_speed
@@ -46,6 +50,8 @@ class BaseAnimal(BaseEntity):
 
         self._base_hunger = base_hunger
         self._max_hunger = 500
+        self._base_hunger_rate = 5
+        self.hunger_rate = self._base_hunger_rate
 
         self._base_health = base_health
         self._max_health = 1_000
@@ -55,6 +61,7 @@ class BaseAnimal(BaseEntity):
 
         self._base_reproduce_cycle = base_reproduce_cycle
         self._max_reproduce_cycle = 5 * base_reproduce_cycle
+        self.reproduce_cooldown = base_reproduce_cycle
 
         self.initial_attributes()
 
@@ -121,7 +128,7 @@ class BaseAnimal(BaseEntity):
         :return:
         """
         if self.hunger > 0:
-            self.hunger -= 5
+            self.hunger -= self.hunger_rate
 
     def die(self):
         """
@@ -162,6 +169,10 @@ class BaseAnimal(BaseEntity):
         if self.age > self.lifespan:
             self.die()
 
+        if self.with_child:
+            self.speed = 0.5 * self._base_speed
+            self.hunger_rate = 2 * self._base_hunger_rate
+
     def step(self, entities: List[BaseEntity]):
         """
         Performs the step of the animal
@@ -174,30 +185,39 @@ class BaseAnimal(BaseEntity):
         if self.skip_action_counter > 0:
             self.skip_action_counter -= 1
         else:
-            self.choose_action()
+            return self.choose_action()
 
     def choose_action(self):
         """
         Chooses an action for the animal
         :return:
         """
-        nearest_food_entity = self.find_nearest_entity(entity_class=self.food_class)
-        nearest_companion_entity = self.find_nearest_entity(
-            entity_class=self.entity_class
-        )
-        if nearest_companion_entity is not None and self.reproduce_ready:
-            if self.distance_from_entity(nearest_companion_entity) < self.eat_radius:
-                self.reproduce_with(nearest_companion_entity)
+        if self.alive:
+            if self.with_child:
+                return self.give_birth()
+            nearest_food_entity = self.find_nearest_entity(entity_class=self.food_class)
+            nearest_companion_entity = self.find_nearest_entity(
+                entity_class=self.entity_class
+            )
+            if (
+                nearest_companion_entity is not None
+                and self.reproduce_ready
+                and self.reproduce_cooldown == 0
+            ):
+                if (
+                    self.distance_from_entity(nearest_companion_entity)
+                    < self.eat_radius
+                ):
+                    self.reproduce_with(nearest_companion_entity)
+                else:
+                    self.move_towards(nearest_companion_entity)
+            elif nearest_food_entity is not None:
+                if self.distance_from_entity(nearest_food_entity) < self.eat_radius:
+                    self.eat_entity(nearest_food_entity)
+                else:
+                    self.move_towards(nearest_food_entity)
             else:
-                self.move_towards(nearest_companion_entity)
-
-        elif nearest_food_entity is not None:
-            if self.distance_from_entity(nearest_food_entity) < self.eat_radius:
-                self.eat_entity(nearest_food_entity)
-            else:
-                self.move_towards(nearest_food_entity)
-        else:
-            self.random_move()
+                self.random_move()
 
     def correct_boundaries(self, new_position: List[float]) -> List[float]:
         """
@@ -245,10 +265,15 @@ class BaseAnimal(BaseEntity):
         The animal can reproduce if it is older than its reproduce_cycle duration
         :return:
         """
-        if self.age // self.reproduce_cycle > self.reproduce_counter:
-            self.reproduce_ready = True
+        if self.reproduce_cooldown > 0:
+            self.reproduce_cooldown -= 1
+        if self.with_child:
+            self.days_to_birth -= 1
+        else:
+            if self.age // self.reproduce_cycle > self.reproduce_counter:
+                self.reproduce_ready = True
 
-    def reproduce_with(self, nearest_companion_entity: BaseEntity):
+    def reproduce_with(self, nearest_companion_entity):
         """
         The animal reproduces with the nearest companion animal of the same species
         Their genes are combined and the mating animal becomes pregnant for a duration
@@ -258,3 +283,21 @@ class BaseAnimal(BaseEntity):
         # TODO: work out logic of how to add to the world board from this class
         self.reproduce_ready = False
         nearest_companion_entity.reproduce_ready = False
+        child_genes = combined_genes(self.genes, nearest_companion_entity.genes)
+        self.child_genes = child_genes
+        self.with_child = True
+        self.days_to_birth = self.reproduce_cycle // 5
+        self.reproduce_cooldown = self._base_reproduce_cycle
+        health_cost = self._base_health // 2
+        self.health -= health_cost
+
+    def give_birth(self) -> Genes:
+        """
+        Gives birth to the child
+        :return:
+        """
+        self.with_child = False
+        child_genes = self.child_genes
+        self.child_genes = None
+        self.days_to_birth = None
+        return child_genes

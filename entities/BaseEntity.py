@@ -29,7 +29,7 @@ class BaseEntity(object):
         self.position: List[float, float] = self.set_random_position()
         self.point: Optional[Line2D]
         self.world_area = None
-        self.health = 100
+        self.health = 50
         self.lifespan = 200
 
     def set_random_position(self) -> List[float]:
