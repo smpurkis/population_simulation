@@ -5,6 +5,7 @@ from typing import Tuple, List, Dict
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import animation
 
 from Genes import Genes
@@ -21,10 +22,10 @@ random.seed(1)
 class WorldBoard:
     def __init__(self, board_size: Tuple[float, float] = (100.0, 100.0), initial_populations: Dict[str, int] = None,
                  show_plot: bool = True):
-        self.board_size = board_size
+        self.board_size = np.array(board_size)
         self.entities_dict: Dict[str, List[BaseEntity]] = {}
         self.entity_list: List[BaseEntity] = []
-        self.showing_entities: List[BaseEntity] = []
+        self.showing_animals: List[BaseEntity] = []
         self.step_no: int = 0
         self.show_plot = show_plot
         if show_plot:
@@ -57,7 +58,7 @@ class WorldBoard:
             self.entities_dict[entity_class].append(entity)
             self.entity_list.append(entity)
             if isinstance(entity, BaseAnimal):
-                self.showing_entities.append(entity)
+                self.showing_animals.append(entity)
 
     def spawn_all_entities(self, initial_populations: Dict[str, int]):
         s = time.time()
@@ -99,22 +100,24 @@ class WorldBoard:
             area_radius=animal.vision_radius,
             entities=other_entities,
             position=animal.position,
+            board_size=self.board_size,
         )
         animal.world_area = world_area
         self.entity_list.append(animal)
         self.entities_dict[entity_class].append(animal)
         if isinstance(animal, BaseAnimal):
-            self.showing_entities.append(animal)
+            self.showing_animals.append(animal)
 
     def set_world_areas(self):
         s = time.time()
-        for entity in self.showing_entities:
+        for entity in self.showing_animals:
             other_entities = copy(self.entity_list)
             other_entities.remove(entity)
             world_area = WorldArea(
                 area_radius=entity.vision_radius,
                 entities=other_entities,
                 position=entity.position,
+                board_size=self.board_size,
             )
             entity.world_area = world_area
         print(f"Set World areas in: {time.time() - s}")
@@ -132,11 +135,11 @@ class WorldBoard:
         # TODO - Investigate parallel choose_action events
         self.step_no += 1
 
-        self.showing_entities = [entity for entity in self.entity_list if entity.show]
+        self.showing_animals = [entity for entity in self.entity_list if entity.show and isinstance(entity, BaseAnimal)]
 
         s = time.time()
-        for animal in self.showing_entities:
-            output = animal.step(self.entity_list, self.step_no)
+        for animal in self.showing_animals:
+            output = animal.step(self.entity_list, self.showing_animals, self.step_no)
             if output is not None:
                 self.spawn_child_animal(animal, animal.entity_class, output)
         animal_action_time = time.time() - s
@@ -201,16 +204,17 @@ class WorldBoard:
             self.step()
             step_time = time.time() - s
             s = time.time()
-            if self.step_no % 5 == 0:
+            if self.step_no % 1 == 0:
                 for entity in self.entity_list:
                     point = entity.point
                     if entity.show:
-                        point.set_data([entity.position[0], entity.position[1]])
+                        if isinstance(entity, BaseAnimal):
+                            point.set_data([entity.position[0], entity.position[1]])
                         point._color = entity.colour
                     else:
                         point.set_data([-1, -1])
             else:
-                for entity in self.showing_entities:
+                for entity in self.showing_animals:
                     point = entity.point
                     if entity.show:
                         point.set_data([entity.position[0], entity.position[1]])
@@ -230,5 +234,5 @@ class WorldBoard:
             if self.step_no > 10:
                 exit(0)
 
-        ani = animation.FuncAnimation(self.fig, update_plot, interval=20)
+        ani = animation.FuncAnimation(self.fig, update_plot, interval=100)
         plt.show()

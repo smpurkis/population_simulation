@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 from numpy import ndarray
 
 
@@ -18,8 +19,9 @@ def distance_between_points(point_1: ndarray, point_2: ndarray, board_size: ndar
 
     x_distance = min(abs_diff_0, board_size[0] - abs_diff_0)
     y_distance = min(abs_diff_1, board_size[1] - abs_diff_1)
-    distance = math.sqrt(x_distance + y_distance)
+    distance = math.sqrt(x_distance ** 2 + y_distance ** 2)
     return distance
+
 
 
 def angle_between(position_1, position_2) -> float:

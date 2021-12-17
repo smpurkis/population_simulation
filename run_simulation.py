@@ -10,7 +10,7 @@ def game_loop(board_size, initial_populations):
     """
     board = WorldBoard(
         board_size=board_size,
-        show_plot=True
+        show_plot=False
     )
     board.run()
 

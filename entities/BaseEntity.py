@@ -72,7 +72,7 @@ class BaseEntity(object):
         else:
             self.update_death_age()
 
-    def step(self, entities, step_no: int):
+    def step(self, entities, showing_entities, step_no: int):
         """
         Takes the next step for this animal
         :param entities:
