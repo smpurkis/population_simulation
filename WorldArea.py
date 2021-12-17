@@ -1,11 +1,13 @@
-from typing import List, Tuple
+from typing import List
+
+import numpy as np
 
 from entities.BaseEntity import BaseEntity
 
 
 class WorldArea:
     def __init__(
-        self, area_radius: int, entities: List[BaseEntity], position: List[float]
+        self, area_radius: int, entities: List[BaseEntity], position: np.ndarray
     ):
         self.area_radius = area_radius
         self.position = position
@@ -29,5 +31,6 @@ class WorldArea:
     def is_entity_in_radius(self, entity: BaseEntity):
         return entity.distance_from_point(self.position) <= self.area_radius
 
-    def update(self, entities: List[BaseEntity]):
-        self.entities_in_radius = self.set_entities_in_radius(entities)
+    def update(self, entities: List[BaseEntity], step_no: int):
+        if step_no % 1 == 0:
+            self.entities_in_radius = self.set_entities_in_radius(entities)

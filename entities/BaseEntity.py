@@ -1,8 +1,11 @@
 import random
 from datetime import datetime as dt
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional
 
+import numpy as np
 from matplotlib.lines import Line2D
+
+from optimised_functions import distance_between_points
 
 
 class BaseEntity(object):
@@ -11,36 +14,35 @@ class BaseEntity(object):
     """
 
     def __init__(
-        self,
-        entity_class: str = None,
-        colour: str = None,
-        board_size: Tuple[float, float] = (100.0, 100.0),
+            self,
+            entity_class: str = None,
+            colour: str = None,
+            board_size: Tuple[float] = (100.0, 100.0),
     ):
         self.entity_class = entity_class
         self.vision_radius = 0
         self.point = None
         self.colour = colour
-        self.board_size = board_size
+        self.board_size = np.array(board_size)
+        # self.board_size = board_size
         self.creation_time = dt.now().time()
         self.age = 0
         self.death_age = 0
         self.show = True
         self.alive = True
-        self.position: List[float, float] = self.set_random_position()
+        self.position = self.set_random_position()
         self.point: Optional[Line2D]
         self.world_area = None
         self.health = 50
         self.lifespan = 200
 
-    def set_random_position(self) -> List[float]:
+    def set_random_position(self) -> np.ndarray:
         """
         Set random position on the board
         :return:
         """
-        position = [
-            random.uniform(0, self.board_size[0]),
-            random.uniform(0, self.board_size[1]),
-        ]
+        position = np.array([random.uniform(0, self.board_size[0]), random.uniform(0, self.board_size[1])])
+        # position = [random.uniform(0, self.board_size[0]), random.uniform(0, self.board_size[1])]
         return position
 
     def update_death_age(self):
@@ -70,7 +72,7 @@ class BaseEntity(object):
         else:
             self.update_death_age()
 
-    def step(self, entities):
+    def step(self, entities, step_no: int):
         """
         Takes the next step for this animal
         :param entities:
@@ -86,34 +88,13 @@ class BaseEntity(object):
         """
         return self.distance_from_point(entity.position)
 
-    def distance_from_point(self, position: List[float]) -> float:
+    def distance_from_point(self, position: np.ndarray) -> float:
         """
         Calculate distance between two points
         :param position:
         :return:
         """
-        return self.distance_between_points(self.position, position, self.board_size)
-
-    @staticmethod
-    def distance_between_points(
-        point_1: List[float], point_2: List[float], board_size: Tuple[float]
-    ) -> float:
-        """
-        Calculates the distance between two points on the board.
-        Taking into account wrapping around the board
-        :param point_1:
-        :param point_2:
-        :param board_size:
-        :return:
-        """
-        x_distance = min(
-            abs(point_1[0] - point_2[0]), board_size[0] - abs(point_1[0] - point_2[0])
-        )
-        y_distance = min(
-            abs(point_1[1] - point_2[1]), board_size[1] - abs(point_1[1] - point_2[1])
-        )
-        distance = x_distance + y_distance
-        return distance
+        return distance_between_points(self.position, position, self.board_size)
 
     def die(self):
         """
@@ -147,7 +128,7 @@ class BaseEntity(object):
                 if nearest_entity is None:
                     nearest_entity = entity
                 elif self.distance_from_entity(entity) < self.distance_from_entity(
-                    nearest_entity
+                        nearest_entity
                 ):
                     nearest_entity = entity
             return nearest_entity

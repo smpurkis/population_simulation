@@ -8,18 +8,17 @@ def game_loop(board_size, initial_populations):
     :param initial_populations:
     :return:
     """
-    board = WorldBoard(board_size=board_size)
-    board.spawn_all_entities(initial_populations)
-    board.plot_world()
-    # while True:
-    #     board.step()
-    # board.plot_world()
+    board = WorldBoard(
+        board_size=board_size,
+        show_plot=True
+    )
+    board.run()
 
 
 if __name__ == "__main__":
     # initial conditions
-    board_size = (200, 200)
+    board_size = (200.0, 200.0)
 
-    initial_spawns = dict(grass=200, pig=100, fox=0)
+    initial_spawns = dict(grass=2000, pig=100, fox=0)
 
     game_loop(board_size, initial_spawns)

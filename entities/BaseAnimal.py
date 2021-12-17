@@ -1,10 +1,13 @@
+import math
 import random
+import time
 from typing import List
 
 import numpy as np
 
 from Genes import Genes, combined_genes
 from entities.BaseEntity import BaseEntity
+from optimised_functions import deg2rad, rad2deg, angle_between, correct_boundaries
 
 
 class BaseAnimal(BaseEntity):
@@ -94,19 +97,21 @@ class BaseAnimal(BaseEntity):
         :return:
         """
         move_distance = random.uniform(0, self.speed)
-        random_angle = random.randint(0, 360)
-        x_step = move_distance * np.cos(np.deg2rad(random_angle))
-        y_step = move_distance * np.sin(np.deg2rad(random_angle))
+        random_angle = float(random.randint(0, 360))
+        angle_rad = deg2rad(random_angle)
+        x_step = move_distance * math.cos(angle_rad)
+        y_step = move_distance * math.sin(angle_rad)
 
-        new_position = [self.position[0] + x_step, self.position[1] + y_step]
+        new_position = np.array([self.position[0] + x_step, self.position[1] + y_step])
+        # new_position = [self.position[0] + x_step, self.position[1] + y_step]
         self.position = self.correct_boundaries(new_position)
 
         return self.position
 
-    def move_towards(self, entity: BaseEntity) -> List[float]:
+    def move_towards(self, entity: BaseEntity) -> np.ndarray:
         return self.move_towards_position(entity.position)
 
-    def move_towards_position(self, position: List[float]) -> List[float]:
+    def move_towards_position(self, position: np.ndarray) -> np.ndarray:
         """
         Moves the animal towards the position
         :param position:
@@ -114,10 +119,12 @@ class BaseAnimal(BaseEntity):
         """
         distance_away = self.distance_from_point(position)
         move_distance = min(self.speed, distance_away)
-        x_step = move_distance * np.cos(np.deg2rad(self.angle_to(position)))
-        y_step = move_distance * np.sin(np.deg2rad(self.angle_to(position)))
+        angle_rad = deg2rad(self.angle_to(position))
+        x_step = move_distance * math.cos(angle_rad)
+        y_step = move_distance * math.sin(angle_rad)
 
-        new_position = [self.position[0] + x_step, self.position[1] + y_step]
+        new_position = np.array([self.position[0] + x_step, self.position[1] + y_step])
+        # new_position = [self.position[0] + x_step, self.position[1] + y_step]
         self.position = self.correct_boundaries(new_position)
 
         return self.position
@@ -173,15 +180,17 @@ class BaseAnimal(BaseEntity):
             self.speed = 0.5 * self._base_speed
             self.hunger_rate = 2 * self._base_hunger_rate
 
-    def step(self, entities: List[BaseEntity]):
+    def step(self, entities: List[BaseEntity], step_no: int):
         """
         Performs the step of the animal
         :return:
         """
-        self.world_area.update(entities)
+        s = time.time()
+        self.world_area.update(entities, step_no)
         self.update_status()
         self.update_hunger()
         self.update_reproduction()
+        print(f"Update funcs: {time.time() - s:.3f}")
         if self.skip_action_counter > 0:
             self.skip_action_counter -= 1
         else:
@@ -192,13 +201,16 @@ class BaseAnimal(BaseEntity):
         Chooses an action for the animal
         :return:
         """
+        s = time.time()
         if self.alive:
             if self.with_child:
                 return self.give_birth()
+            t = time.time()
             nearest_food_entity = self.find_nearest_entity(entity_class=self.food_class)
             nearest_companion_entity = self.find_nearest_entity(
                 entity_class=self.entity_class
             )
+            print(f"Nearest entities time: {time.time() - t:.3f}")
             if (
                 nearest_companion_entity is not None
                 and self.reproduce_ready
@@ -218,23 +230,10 @@ class BaseAnimal(BaseEntity):
                     self.move_towards(nearest_food_entity)
             else:
                 self.random_move()
+        print(f"Choose action time: {time.time() - s}")
 
-    def correct_boundaries(self, new_position: List[float]) -> List[float]:
-        """
-        Checks if the new position is valid
-        Ensures it wraps the position
-        :param new_position:
-        :return:
-        """
-        if new_position[0] < 0:
-            new_position[0] = self.board_size[0] - 1
-        elif new_position[0] >= self.board_size[0]:
-            new_position[0] = 0
-        if new_position[1] < 0:
-            new_position[1] = self.board_size[1] - 1
-        elif new_position[1] >= self.board_size[1]:
-            new_position[1] = 0
-        return new_position
+    def correct_boundaries(self, new_position):
+        return correct_boundaries(new_position, self.board_size)
 
     def angle_to(self, position):
         """
@@ -242,10 +241,7 @@ class BaseAnimal(BaseEntity):
         :param position:
         :return:
         """
-        x_diff = position[0] - self.position[0]
-        y_diff = position[1] - self.position[1]
-        angle = np.rad2deg(np.arctan2(y_diff, x_diff))
-        return angle
+        return angle_between(position, self.position)
 
     def eat_entity(self, entity: BaseEntity):
         """
