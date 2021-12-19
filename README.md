@@ -32,7 +32,7 @@ Todos:
 -
 
 
-With     
+With
 ```python
 board_size = (200.0, 200.0)
 initial_spawns = dict(grass=2000, pig=100, fox=0)

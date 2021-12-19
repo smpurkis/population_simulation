@@ -180,13 +180,20 @@ class BaseAnimal(BaseEntity):
             self.speed = 0.5 * self._base_speed
             self.hunger_rate = 2 * self._base_hunger_rate
 
-    def step(self, entities: List[BaseEntity], showing_entities: List[BaseEntity], step_no: int):
+    def step(
+        self,
+        entities: List[BaseEntity],
+        showing_entities: List[BaseEntity],
+        step_no: int,
+    ):
         """
         Performs the step of the animal
         :return:
         """
         # s = time.time()
         self.world_area.update(entities, showing_entities, step_no)
+        # print(f"Update world area: {time.time() - s:.3f}")
+        # s = time.time()
         self.update_status()
         self.update_hunger()
         self.update_reproduction()

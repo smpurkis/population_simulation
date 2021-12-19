@@ -14,10 +14,10 @@ class BaseEntity(object):
     """
 
     def __init__(
-            self,
-            entity_class: str = None,
-            colour: str = None,
-            board_size: Tuple[float] = (100.0, 100.0),
+        self,
+        entity_class: str = None,
+        colour: str = None,
+        board_size: Tuple[float] = (100.0, 100.0),
     ):
         self.entity_class = entity_class
         self.vision_radius = 0
@@ -41,7 +41,12 @@ class BaseEntity(object):
         Set random position on the board
         :return:
         """
-        position = np.array([random.uniform(0, self.board_size[0]), random.uniform(0, self.board_size[1])])
+        position = np.array(
+            [
+                random.uniform(0, self.board_size[0]),
+                random.uniform(0, self.board_size[1]),
+            ]
+        )
         # position = [random.uniform(0, self.board_size[0]), random.uniform(0, self.board_size[1])]
         return position
 
@@ -128,7 +133,7 @@ class BaseEntity(object):
                 if nearest_entity is None:
                     nearest_entity = entity
                 elif self.distance_from_entity(entity) < self.distance_from_entity(
-                        nearest_entity
+                    nearest_entity
                 ):
                     nearest_entity = entity
             return nearest_entity

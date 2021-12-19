@@ -14,14 +14,18 @@ from entities import Fox, Grass, Pig
 from entities.BaseAnimal import BaseAnimal
 from entities.BaseEntity import BaseEntity
 
-matplotlib.use('TkAgg')
+matplotlib.use("TkAgg")
 # matplotlib.use('WebAgg')
 random.seed(1)
 
 
 class WorldBoard:
-    def __init__(self, board_size: Tuple[float, float] = (100.0, 100.0), initial_populations: Dict[str, int] = None,
-                 show_plot: bool = True):
+    def __init__(
+        self,
+        board_size: Tuple[float, float] = (100.0, 100.0),
+        initial_populations: Dict[str, int] = None,
+        show_plot: bool = True,
+    ):
         self.board_size = np.array(board_size)
         self.entities_dict: Dict[str, List[BaseEntity]] = {}
         self.entity_list: List[BaseEntity] = []
@@ -70,7 +74,7 @@ class WorldBoard:
         self.set_world_areas()
 
     def spawn_child_animal(
-            self, parent_animal: BaseAnimal, entity_class: str, genes: Genes
+        self, parent_animal: BaseAnimal, entity_class: str, genes: Genes
     ):
         """
         Spawns an animal with the given genes
@@ -135,7 +139,11 @@ class WorldBoard:
         # TODO - Investigate parallel choose_action events
         self.step_no += 1
 
-        self.showing_animals = [entity for entity in self.entity_list if entity.show and isinstance(entity, BaseAnimal)]
+        self.showing_animals = [
+            entity
+            for entity in self.entity_list
+            if entity.show and isinstance(entity, BaseAnimal)
+        ]
 
         s = time.time()
         for animal in self.showing_animals:
@@ -147,10 +155,9 @@ class WorldBoard:
         s = time.time()
         if self.step_no % 1 == 0:
             # TODO: Make this a function and improve the mechanics of grass spawning
-            base_number_to_spawn = (
-                    max(self.initial_populations["grass"] // 100, 1)
-                    * int(float(self.board_size[0] * self.board_size[1] / 100 ** 2) ** 0.5)
-            )
+            base_number_to_spawn = max(
+                self.initial_populations["grass"] // 100, 1
+            ) * int(float(self.board_size[0] * self.board_size[1] / 100 ** 2) ** 0.5)
             spawn_plants = random.randrange(100) <= 5
             if spawn_plants:
                 number_to_spawn = random.choice(
@@ -158,7 +165,9 @@ class WorldBoard:
                 )
                 self.spawn_plants(number_to_spawn=number_to_spawn)
         plant_spawn_time = time.time() - s
-        print(f"Animals action time: {animal_action_time:.3f}, Spawn plants time: {plant_spawn_time:.3f}")
+        print(
+            f"Animals action time: {animal_action_time:.3f}, Spawn plants time: {plant_spawn_time:.3f}"
+        )
 
     def _setup_plot(self):
         self.fig = plt.figure(figsize=(12, 10))
@@ -181,7 +190,9 @@ class WorldBoard:
             if self.step_no % 10 == 0:
                 time_taken = time.time() - stationary_time
                 avg_time = 1000 * (time_taken / self.step_no)
-                print(f"day: {self.step_no}, time: {time_taken}, average: {avg_time:.2f}ms")
+                print(
+                    f"day: {self.step_no}, time: {time_taken}, average: {avg_time:.2f}ms"
+                )
                 print(
                     f"Grass: {len([e for e in self.entities_dict.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict.get('fox', []) if e.alive])}"
                 )
@@ -222,11 +233,15 @@ class WorldBoard:
                     else:
                         point.set_data([-1, -1])
             plot_time = time.time() - s
-            print(f"Step time: {step_time:.3f} Plot time: {plot_time:.3f}, Total time: {step_time + plot_time:.3f}")
+            print(
+                f"Step time: {step_time:.3f} Plot time: {plot_time:.3f}, Total time: {step_time + plot_time:.3f}"
+            )
             if self.step_no % 10 == 0:
                 time_taken = time.time() - stationary_time
                 avg_time = 1000 * (time_taken / self.step_no)
-                print(f"step_no: {self.step_no}, time: {time_taken}, average: {avg_time:.2f}ms")
+                print(
+                    f"step_no: {self.step_no}, time: {time_taken}, average: {avg_time:.2f}ms"
+                )
                 print(
                     f"Grass: {len([e for e in self.entities_dict.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict.get('fox', []) if e.alive])}"
                 )
