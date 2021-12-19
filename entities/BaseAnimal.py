@@ -7,7 +7,7 @@ import numpy as np
 
 from Genes import Genes, combined_genes
 from entities.BaseEntity import BaseEntity
-from optimised_functions import deg2rad, rad2deg, angle_between, correct_boundaries
+from optimised_functions import deg2rad, angle_between, correct_boundaries
 
 
 class BaseAnimal(BaseEntity):
@@ -191,7 +191,7 @@ class BaseAnimal(BaseEntity):
         :return:
         """
         # s = time.time()
-        self.world_area.update(entities, showing_entities, step_no)
+        # self.world_area.update(entities, showing_entities, step_no, all_distances, rank_order_of_closest_entities)
         # print(f"Update world area: {time.time() - s:.3f}")
         # s = time.time()
         self.update_status()
