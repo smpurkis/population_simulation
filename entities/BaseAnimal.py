@@ -82,7 +82,9 @@ class BaseAnimal(BaseEntity):
             self._max_eating_penalty,
         )
         self.hunger = min(self.genes.hunger * self._base_hunger, self._max_hunger)
-        self.health = min(self.genes.health * self._base_health, self._max_health)
+
+        starting_health_penalty = 1/10
+        self.health = min(self.genes.health * self._base_health * starting_health_penalty, self._max_health)
         self.lifespan = min(
             self.genes.lifespan * self._base_lifespan, self._max_lifespan
         )

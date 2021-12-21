@@ -1,11 +1,11 @@
 import math
 
-import numba
+# import numba
 import numpy as np
 from numpy import ndarray
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True)
 def distance_between_points(point_1: ndarray, point_2: ndarray, board_size: ndarray):
     # pythran export distance_between_points(float [], float [], float [])
     """
@@ -25,7 +25,7 @@ def distance_between_points(point_1: ndarray, point_2: ndarray, board_size: ndar
     return distance
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True)
 def angle_between(position_1, position_2) -> float:
     # pythran export angle_between(float [], float [])
     """
@@ -39,19 +39,19 @@ def angle_between(position_1, position_2) -> float:
     return angle
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True)
 def deg2rad(x: float) -> float:
     # pythran export deg2rad(float)
     return x * math.pi / 180.0
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True)
 def rad2deg(x: float) -> float:
     # pythran export rad2deg(float)
     return x * 180.0 / math.pi
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True)
 def correct_boundaries(new_position: ndarray, board_size: ndarray) -> ndarray:
     # pythran export correct_boundaries(float [], float [])
     """
@@ -72,7 +72,7 @@ def correct_boundaries(new_position: ndarray, board_size: ndarray) -> ndarray:
     return new_position
 
 
-@numba.njit(fastmath=True, parallel=False)
+# @numba.njit(fastmath=True, parallel=False)
 def distance_between_points_parallel(
         entity_position: ndarray,
         positions: ndarray,
@@ -89,7 +89,7 @@ def distance_between_points_parallel(
     return distances
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True)
 def distance_between_points_vectorized(
         entity_position: ndarray, positions: ndarray, board_size: ndarray
 ) -> ndarray:

@@ -51,11 +51,14 @@ class WorldArea:
         closest_entities_by_class = {}
         classes_in_entities = set(entities_dict.keys())
         for entity_class in classes_in_entities:
-            entities_of_class = copy(entities_dict[entity_class])
+            entities_of_class = [e for e in copy(entities_dict[entity_class]) if e.alive]
             if len(entities_of_class) == 0:
                 continue
             if entity_class == self.entity.entity_class:
-                entities_of_class.remove(self.entity)
+                try:
+                    entities_of_class.remove(self.entity)
+                except:
+                    pass
             positions = np.array([e.position for e in entities_of_class])
             distances = distance_between_points_parallel(
                 self.position, positions, self.board_size, self.area_radius

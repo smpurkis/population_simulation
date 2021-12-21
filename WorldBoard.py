@@ -100,7 +100,6 @@ class WorldBoard:
             )
             animal.point = point
         other_entities = copy(self.entity_list)
-        other_entities.remove(animal)
         world_area = WorldArea(
             entity=animal,
             area_radius=animal.vision_radius,
