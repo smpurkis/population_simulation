@@ -102,7 +102,9 @@ class WorldBoard:
         other_entities = copy(self.entity_list)
         other_entities.remove(animal)
         world_area = WorldArea(
+            entity=animal,
             area_radius=animal.vision_radius,
+            entities_dict=self.entities_dict,
             entities=other_entities,
             position=animal.position,
             board_size=self.board_size,
@@ -119,7 +121,9 @@ class WorldBoard:
             other_entities = copy(self.entity_list)
             other_entities.remove(entity)
             world_area = WorldArea(
+                entity=entity,
                 area_radius=entity.vision_radius,
+                entities_dict=self.entities_dict,
                 entities=other_entities,
                 position=entity.position,
                 board_size=self.board_size,
@@ -150,7 +154,7 @@ class WorldBoard:
         for animal in self.entity_list:
             other_entities = copy(self.entity_list)
             other_entities.remove(animal)
-            output = animal.step(other_entities, self.showing_animals, self.step_no)
+            output = animal.step(other_entities, self.showing_animals, self.step_no, self.entities_dict)
             if output is not None:
                 self.spawn_child_animal(animal, animal.entity_class, output)
         animal_action_time = time.time() - s

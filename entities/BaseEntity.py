@@ -47,7 +47,6 @@ class BaseEntity(object):
                 random.uniform(0, self.board_size[1]),
             ]
         )
-        # position = [random.uniform(0, self.board_size[0]), random.uniform(0, self.board_size[1])]
         return position
 
     def update_death_age(self):
@@ -77,7 +76,7 @@ class BaseEntity(object):
         else:
             self.update_death_age()
 
-    def step(self, entities, showing_entities, step_no: int):
+    def step(self, entities, showing_entities, step_no: int, entities_dict):
         """
         Takes the next step for this animal
         :param entities:

@@ -1,7 +1,7 @@
 import math
 import random
 import time
-from typing import List
+from typing import List, Dict
 
 import numpy as np
 
@@ -185,13 +185,14 @@ class BaseAnimal(BaseEntity):
         entities: List[BaseEntity],
         showing_entities: List[BaseEntity],
         step_no: int,
+        entities_dict: Dict[str, List[BaseEntity]]
     ):
         """
         Performs the step of the animal
         :return:
         """
         # s = time.time()
-        self.world_area.update(entities, showing_entities, step_no)
+        self.world_area.update(entities, showing_entities, step_no, entities_dict)
         # print(f"Update world area: {time.time() - s:.3f}")
         # s = time.time()
         self.update_status()
