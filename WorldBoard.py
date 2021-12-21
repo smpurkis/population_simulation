@@ -146,7 +146,7 @@ class WorldBoard:
         ]
 
         s = time.time()
-        for animal in self.showing_animals:
+        for animal in self.entity_list:
             output = animal.step(self.entity_list, self.showing_animals, self.step_no)
             if output is not None:
                 self.spawn_child_animal(animal, animal.entity_class, output)
@@ -158,6 +158,7 @@ class WorldBoard:
             base_number_to_spawn = max(
                 self.initial_populations["grass"] // 100, 1
             ) * int(float(self.board_size[0] * self.board_size[1] / 100 ** 2) ** 0.5)
+            base_number_to_spawn = max(base_number_to_spawn, 1)
             spawn_plants = random.randrange(100) <= 5
             if spawn_plants:
                 number_to_spawn = random.choice(
@@ -249,5 +250,5 @@ class WorldBoard:
             # if self.step_no > 10:
             #     exit(0)
 
-        ani = animation.FuncAnimation(self.fig, update_plot, interval=100)
+        ani = animation.FuncAnimation(self.fig, update_plot, interval=20)
         plt.show()

@@ -36,7 +36,7 @@ class WorldArea:
         self.area_radius = area_radius
         self.position = position
         self.board_size = board_size
-        self.entities_in_radius: List[BaseEntity] = self.set_entities_in_radius_vec(
+        self.entities_in_radius: List[BaseEntity] = self.set_entities_in_radius(
             entities
         )
 
@@ -105,7 +105,7 @@ class WorldArea:
         showing_entities: List[BaseEntity],
         step_no: int,
     ):
-        if step_no % 2 == 0:
+        if step_no % 1 == 0:
             self.entities_in_radius = self.set_entities_in_radius(entities)
         else:
             self.entities_in_radius = self.update_entities_in_radius(showing_entities)

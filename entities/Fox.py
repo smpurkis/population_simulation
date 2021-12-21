@@ -6,7 +6,7 @@ class Fox(BaseAnimal):
         self,
         entity_class: str = "fox",
         colour: str = "red",
-        base_speed: float = 2,
+        base_speed: float = 1,
         food_class: str = "pig",
         base_eating_penalty: int = 10,
         base_vision_radius: int = 50,

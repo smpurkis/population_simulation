@@ -123,17 +123,25 @@ class BaseEntity(object):
                 return None
             return self.world_area.entities_in_radius[0]
         else:
-            for entity in [
+            nearest_entity = [
                 e
                 for e in self.world_area.entities_in_radius
                 if e.entity_class == entity_class and e.alive
-            ]:
-                if entity == self:
-                    continue
-                if nearest_entity is None:
-                    nearest_entity = entity
-                elif self.distance_from_entity(entity) < self.distance_from_entity(
-                    nearest_entity
-                ):
-                    nearest_entity = entity
-            return nearest_entity
+            ]
+            if len(nearest_entity) == 0:
+                return None
+            return nearest_entity[0]
+            # for entity in [
+            #     e
+            #     for e in self.world_area.entities_in_radius
+            #     if e.entity_class == entity_class and e.alive
+            # ]:
+            #     if entity == self:
+            #         continue
+            #     if nearest_entity is None:
+            #         nearest_entity = entity
+            #     elif self.distance_from_entity(entity) < self.distance_from_entity(
+            #         nearest_entity
+            #     ):
+            #         nearest_entity = entity
+            # return nearest_entity

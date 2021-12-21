@@ -6,7 +6,7 @@ class Pig(BaseAnimal):
         self,
         entity_class: str = "pig",
         colour: str = "pink",
-        base_speed: float = 1,
+        base_speed: float = 0.5,
         food_class: str = "grass",
         base_eating_penalty: int = 1,
         base_vision_radius: int = 30,
