@@ -8,7 +8,7 @@ class Pig(BaseAnimal):
         colour: str = "pink",
         base_speed: float = 0.5,
         food_class: str = "grass",
-        base_eating_penalty: int = 1,
+        base_eating_penalty: int = 5,
         base_vision_radius: int = 30,
         base_health: int = 100,
         base_hunger: int = 100,

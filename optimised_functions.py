@@ -99,3 +99,4 @@ def distance_between_points_vectorized(
 
     distances = np.sqrt(x_distance ** 2 + y_distance ** 2)
     return distances
+

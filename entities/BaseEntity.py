@@ -117,31 +117,14 @@ class BaseEntity(object):
         :param entity_class: find nearest entity of this type
         :return:
         """
-        nearest_entity = None
         if entity_class is None:
-            if len(self.world_area.entities_in_radius) == 0:
-                return None
-            return self.world_area.entities_in_radius[0]
+            nearest_entity_with_distance = None
+            for entity_with_distance in self.world_area.closest_entities_by_class.items():
+                if nearest_entity_with_distance is None:
+                    nearest_entity_with_distance = entity_with_distance
+                else:
+                    if entity_with_distance["distance"] < nearest_entity_with_distance["distance"]:
+                        nearest_entity_with_distance = entity_with_distance
+            return nearest_entity_with_distance.get("entity", None)
         else:
-            nearest_entity = [
-                e
-                for e in self.world_area.entities_in_radius
-                if e.entity_class == entity_class and e.alive
-            ]
-            if len(nearest_entity) == 0:
-                return None
-            return nearest_entity[0]
-            # for entity in [
-            #     e
-            #     for e in self.world_area.entities_in_radius
-            #     if e.entity_class == entity_class and e.alive
-            # ]:
-            #     if entity == self:
-            #         continue
-            #     if nearest_entity is None:
-            #         nearest_entity = entity
-            #     elif self.distance_from_entity(entity) < self.distance_from_entity(
-            #         nearest_entity
-            #     ):
-            #         nearest_entity = entity
-            # return nearest_entity
+            return self.world_area.closest_entities_by_class.get(entity_class, {}).get("entity", None)
