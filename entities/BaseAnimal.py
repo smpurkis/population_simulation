@@ -33,7 +33,7 @@ class BaseAnimal(BaseEntity):
     ):
         super().__init__(entity_class, colour, *args, **kwargs)
         self.food_class = food_class
-        self.eat_radius = 1
+        self.eat_radius = 0.5
         self.skip_action_counter = 0
         self.reproduce_ready = False
         self.reproduce_counter = 0

@@ -168,9 +168,9 @@ class WorldBoard:
                 )
                 self.spawn_plants(number_to_spawn=number_to_spawn)
         plant_spawn_time = time.time() - s
-        print(
-            f"Animals action time: {animal_action_time:.3f}, Spawn plants time: {plant_spawn_time:.3f}"
-        )
+        # print(
+        #     f"Animals action time: {animal_action_time:.3f}, Spawn plants time: {plant_spawn_time:.3f}"
+        # )
 
     def _setup_plot(self):
         self.fig = plt.figure(figsize=(12, 10))
@@ -236,9 +236,9 @@ class WorldBoard:
                     else:
                         point.set_data([-1, -1])
             plot_time = time.time() - s
-            print(
-                f"Step time: {step_time:.3f} Plot time: {plot_time:.3f}, Total time: {step_time + plot_time:.3f}"
-            )
+            # print(
+            #     f"Step time: {step_time:.3f} Plot time: {plot_time:.3f}, Total time: {step_time + plot_time:.3f}"
+            # )
             if self.step_no % 10 == 0:
                 time_taken = time.time() - stationary_time
                 avg_time = 1000 * (time_taken / self.step_no)
