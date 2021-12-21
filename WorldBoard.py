@@ -147,7 +147,9 @@ class WorldBoard:
 
         s = time.time()
         for animal in self.entity_list:
-            output = animal.step(self.entity_list, self.showing_animals, self.step_no)
+            other_entities = copy(self.entity_list)
+            other_entities.remove(animal)
+            output = animal.step(other_entities, self.showing_animals, self.step_no)
             if output is not None:
                 self.spawn_child_animal(animal, animal.entity_class, output)
         animal_action_time = time.time() - s

@@ -74,7 +74,7 @@ def distance_between_points_parallel(
     positions: ndarray,
     board_size: ndarray,
     area_radius: float,
-) -> ndarray:
+):
     # pythran export distance_between_points_parallel(float [], float [][], float [], float)
     distances = np.empty(shape=(positions.shape[0]), dtype=np.float32)
 

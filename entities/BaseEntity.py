@@ -47,7 +47,6 @@ class BaseEntity(object):
                 random.uniform(0, self.board_size[1]),
             ]
         )
-        # position = [random.uniform(0, self.board_size[0]), random.uniform(0, self.board_size[1])]
         return position
 
     def update_death_age(self):
@@ -117,7 +116,6 @@ class BaseEntity(object):
         :param entity_class: find nearest entity of this type
         :return:
         """
-        nearest_entity = None
         if entity_class is None:
             if len(self.world_area.entities_in_radius) == 0:
                 return None
@@ -131,17 +129,3 @@ class BaseEntity(object):
             if len(nearest_entity) == 0:
                 return None
             return nearest_entity[0]
-            # for entity in [
-            #     e
-            #     for e in self.world_area.entities_in_radius
-            #     if e.entity_class == entity_class and e.alive
-            # ]:
-            #     if entity == self:
-            #         continue
-            #     if nearest_entity is None:
-            #         nearest_entity = entity
-            #     elif self.distance_from_entity(entity) < self.distance_from_entity(
-            #         nearest_entity
-            #     ):
-            #         nearest_entity = entity
-            # return nearest_entity

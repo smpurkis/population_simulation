@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 
@@ -40,48 +40,16 @@ class WorldArea:
             entities
         )
 
-    def add_entity(self, entity: BaseEntity):
-        self.entities_in_radius.append(entity)
-
-    def set_entities_in_radius(self, entities: List[BaseEntity]) -> List[BaseEntity]:
-        entities_in_radius: List[BaseEntity] = []
-        for entity in entities:
-            if self.is_entity_in_radius(entity):
-                entities_in_radius.append(entity)
+    def set_entities_in_radius(self, other_entities: List[BaseEntity]) -> List[BaseEntity]:
+        entities_in_radius = []
+        for entity in other_entities:
+            dist = entity.distance_from_point(self.position)
+            if dist < self.area_radius:
+                entities_in_radius.append((dist, entity))
         entities_in_radius = sorted(
-            entities_in_radius, key=lambda x: x.distance_from_point(self.position)
+            entities_in_radius, key=lambda x: x[0]
         )
-        return entities_in_radius
-
-    def set_entities_in_radius_parallel(
-        self, entities: List[BaseEntity]
-    ) -> List[BaseEntity]:
-        positions = np.array([e.position for e in entities])
-        area_radius = self.area_radius
-        distances_sorted, last_index_in_radius = distance_between_points_parallel(
-            self.position, positions, self.board_size, area_radius
-        )
-        entities_in_radius = [
-            entities[i] for i in distances_sorted if i < last_index_in_radius
-        ]
-        return entities_in_radius
-
-    def set_entities_in_radius_vec(
-        self, entities: List[BaseEntity]
-    ) -> List[BaseEntity]:
-        positions = np.array([e.position for e in entities])
-        distances = distance_between_points_vectorized(
-            self.position, positions, self.board_size
-        )
-        distances_entities = sorted(zip(distances, entities), key=lambda x: x[0])
-        cut_off_index = 0
-        for index, dist_ent in enumerate(distances_entities):
-            if dist_ent[0] > self.area_radius:
-                cut_off_index = index
-                break
-        entities_in_radius = [
-            dist_ent[1] for dist_ent in distances_entities[:cut_off_index]
-        ]
+        entities_in_radius = [e[1] for e in entities_in_radius]
         return entities_in_radius
 
     def update_entities_in_radius(
@@ -105,7 +73,4 @@ class WorldArea:
         showing_entities: List[BaseEntity],
         step_no: int,
     ):
-        if step_no % 1 == 0:
-            self.entities_in_radius = self.set_entities_in_radius(entities)
-        else:
-            self.entities_in_radius = self.update_entities_in_radius(showing_entities)
+        self.entities_in_radius = self.set_entities_in_radius(entities)
