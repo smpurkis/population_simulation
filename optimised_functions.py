@@ -1,11 +1,11 @@
 import math
 
-import numba
+# import numba
 from numpy import ndarray
 import numpy as np
 
 
-@numba.njit(fastmath=True, cache=True)
+# @numba.njit(fastmath=True)
 def distance_between_points(point_1: ndarray, point_2: ndarray, board_size: ndarray):
     # pythran export distance_between_points(float [], float [], float [])
     """
@@ -87,7 +87,7 @@ def distance_between_points_parallel(
     return distances_sorted, last_index_in_radius
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True)
 def distance_between_points_vectorized(
     entity_position: ndarray, positions: ndarray, board_size: ndarray
 ) -> ndarray:
@@ -101,10 +101,12 @@ def distance_between_points_vectorized(
     return distances
 
 
-@numba.njit(fastmath=True, parallel=False)
+# @numba.njit(fastmath=True, parallel=False)
 def calculate_all_distance_between_points(positions: ndarray, board_size: ndarray):
+    # pythran export calculate_all_distance_between_points(float [][], float [])
     all_distances = np.zeros(shape=(positions.shape[0], positions.shape[0]))
-    for i in numba.prange((positions.shape[0] // 2) + 1):
+    # omp parallel for
+    for i in range((positions.shape[0] // 2) + 1):
         for j in range(positions.shape[0]):
             if i == j:
                 # all_distances[i, j] = 0

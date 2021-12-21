@@ -123,6 +123,7 @@ class BaseEntity(object):
                 return None
             return self.world_area.entities_in_radius[0]
         else:
+            # return [e for e in self.world_area.entities_in_radius if e.entity_class == entity_class][0]
             for entity in [
                 e
                 for e in self.world_area.entities_in_radius

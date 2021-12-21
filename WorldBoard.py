@@ -108,7 +108,10 @@ class WorldBoard:
             )
             animal.point = point
         other_entities = copy(self.entity_list)
-        other_entities.remove(animal)
+        try:
+            other_entities.remove(animal)
+        except:
+            pass
         world_area = WorldArea(
             area_radius=animal.vision_radius,
             entities=other_entities,
@@ -165,11 +168,13 @@ class WorldBoard:
         )
         # all_rank_order_of_closest_entities = np.argsort(all_distances, axis=1)
         number_of_showing_animals = len(self.showing_animals)
-        batch_size = 1_000
-        batches = [
-            self.showing_animals[i : i + batch_size]
-            for i in range(0, number_of_showing_animals, batch_size)
-        ]
+        batch_size = 100
+        batches = np.array(
+            [
+                self.showing_animals[i : i + batch_size]
+                for i in range(0, number_of_showing_animals, batch_size)
+            ]
+        )
 
         entity_list = np.array(self.entity_list)
         showing_animals = np.array(self.showing_animals)
@@ -184,8 +189,8 @@ class WorldBoard:
             batch_distances = np.array(batch_distances)
             batch_world_areas = update_batch_of_world_areas(
                 batch,
-                self.entity_list,
-                self.showing_animals,
+                entity_list,
+                showing_animals,
                 self.step_no,
                 batch_distances,
             )
@@ -306,8 +311,8 @@ class WorldBoard:
                     f"Grass: {len([e for e in self.entities_dict.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict.get('fox', []) if e.alive])}"
                 )
 
-            if self.step_no > 10:
-                exit(0)
+            # if self.step_no > 10:
+            #     exit(0)
 
-        ani = animation.FuncAnimation(self.fig, update_plot, interval=100)
+        ani = animation.FuncAnimation(self.fig, update_plot, interval=50)
         plt.show()
