@@ -8,12 +8,16 @@ from entities.BaseEntity import BaseEntity
 
 # @ray.remote
 def update_batch_of_world_areas(
-    animals, entity_list, showing_animals, step_no, batch_distances_of_entities
+    animals, entity_list, showing_animals, step_no, batch_distances_of_entities, batch_rank_order_of_closest_entities
 ):
     world_areas = []
     for i, animal in enumerate(animals):
         distances_of_entities = batch_distances_of_entities[i]
-        rank_order_of_closest_entities = np.argsort(distances_of_entities)
+
+        rank_order_of_closest_entities = batch_rank_order_of_closest_entities[i]
+        # rank_order_of_closest_entities = np.argsort(distances_of_entities)
+        # rank_order_of_closest_entities = np.arange(len(distances_of_entities))
+
         world_area = animal.world_area.update(
             entity_list,
             showing_animals,

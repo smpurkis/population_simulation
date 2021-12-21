@@ -163,10 +163,12 @@ class WorldBoard:
 
         # calculate all distances between entities
         positions = np.array([entity.position for entity in self.entity_list])
+        # t = time.time()
         all_distances = calculate_all_distance_between_points(
             positions, self.board_size
         )
-        # all_rank_order_of_closest_entities = np.argsort(all_distances, axis=1)
+        # print(f"all distance calculation time taken: {time.time() - t}")
+        all_rank_order_of_closest_entities = np.argsort(all_distances, axis=1)
         number_of_showing_animals = len(self.showing_animals)
         batch_size = 100
         batches = np.array(
@@ -182,10 +184,13 @@ class WorldBoard:
         tasks = []
         for batch in batches:
             batch_distances = []
+            batch_rank_order_of_closest_entities = []
             for animal in batch:
                 animal_distance_index = np.where(positions == animal.position)[0][0]
                 animal_distances = all_distances[animal_distance_index]
                 batch_distances.append(animal_distances)
+                rank_order_of_closest_entities = all_rank_order_of_closest_entities[animal_distance_index]
+                batch_rank_order_of_closest_entities.append(rank_order_of_closest_entities)
             batch_distances = np.array(batch_distances)
             batch_world_areas = update_batch_of_world_areas(
                 batch,
@@ -193,6 +198,7 @@ class WorldBoard:
                 showing_animals,
                 self.step_no,
                 batch_distances,
+                batch_rank_order_of_closest_entities
             )
             world_areas.extend(batch_world_areas)
         # batches_world_areas = []
