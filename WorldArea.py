@@ -3,10 +3,6 @@ from typing import List, Tuple
 import numpy as np
 
 from entities.BaseEntity import BaseEntity
-from optimised_functions import (
-    distance_between_points_parallel,
-    distance_between_points,
-)
 
 
 def distance_between_points_vectorized(
