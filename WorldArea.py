@@ -1,29 +1,25 @@
-from typing import List
+from copy import copy
+from typing import List, Dict, Union
 
 import numpy as np
 
 from entities.BaseEntity import BaseEntity
+from optimised_functions import distance_between_points_vectorized
 
-# import ray
 
-# @ray.remote
-def update_batch_of_world_areas(
-    animals, entity_list, showing_animals, step_no, batch_distances_of_entities, batch_rank_order_of_closest_entities
+def calculate_world_areas(
+        animals, entities, all_distances,
 ):
     world_areas = []
+    entity_classes_set = {e.entity_class for e in entities if e.alive}
     for i, animal in enumerate(animals):
-        distances_of_entities = batch_distances_of_entities[i]
+        distances = all_distances[i]
+        # distances = np.array([])
 
-        rank_order_of_closest_entities = batch_rank_order_of_closest_entities[i]
-        # rank_order_of_closest_entities = np.argsort(distances_of_entities)
-        # rank_order_of_closest_entities = np.arange(len(distances_of_entities))
-
-        world_area = animal.world_area.update(
-            entity_list,
-            showing_animals,
-            step_no,
-            distances_of_entities,
-            rank_order_of_closest_entities,
+        world_area = animal.world_area.set(
+            entities,
+            entity_classes_set,
+            distances
         )
         world_areas.append(world_area)
     return world_areas
@@ -31,79 +27,88 @@ def update_batch_of_world_areas(
 
 class WorldArea:
     def __init__(
-        self,
-        area_radius: int,
-        entities: List[BaseEntity],
-        position: np.ndarray,
-        board_size: np.ndarray,
+            self,
+            area_radius: int,
+            entity: BaseEntity,
+            position: np.ndarray,
+            board_size: np.ndarray,
     ):
         self.area_radius = area_radius
         self.position = position
         self.board_size = board_size
-        self.entities_in_radius: List[BaseEntity] = self.set_entities_in_radius(
-            entities
-        )
+        self.entity = entity
 
-    def add_entity(self, entity: BaseEntity):
-        self.entities_in_radius.append(entity)
-
-    def set_entities_in_radius(self, entities: List[BaseEntity]) -> List[BaseEntity]:
-        entities_in_radius: List[BaseEntity] = []
-        for entity in entities:
-            if self.is_entity_in_radius(entity):
-                entities_in_radius.append(entity)
-        entities_in_radius = sorted(
-            entities_in_radius, key=lambda x: x.distance_from_point(self.position)
-        )
-        return entities_in_radius
-
-    def set_entities_in_radius_vec(
-        self,
-        entities: List[BaseEntity],
-        distances: np.ndarray,
-        rank_order_of_closest_entities: np.ndarray,
-    ) -> List[BaseEntity]:
-        entities_by_distance = [
-            (distances[i], entities[i]) for i in rank_order_of_closest_entities
-        ]
-        cut_off_index = 0
-        for index, dist_ent in enumerate(entities_by_distance[1:]):
-            if dist_ent[0] > self.area_radius:
-                cut_off_index = index
-                break
-        entities_in_radius = [
-            dist_ent[1] for dist_ent in entities_by_distance[1:cut_off_index]
-        ]
-        return entities_in_radius
-
-    def update_entities_in_radius(
-        self, showing_entities: List[BaseEntity]
-    ) -> List[BaseEntity]:
-        entities_in_radius: List[BaseEntity] = []
-        for entity in showing_entities:
-            if self.is_entity_in_radius(entity):
-                entities_in_radius.append(entity)
-        entities_in_radius = sorted(
-            entities_in_radius, key=lambda x: x.distance_from_point(self.position)
-        )
-        return entities_in_radius
-
-    def is_entity_in_radius(self, entity: BaseEntity):
-        return entity.distance_from_point(self.position) <= self.area_radius
-
-    def update(
-        self,
-        entities: List[BaseEntity],
-        showing_entities: List[BaseEntity],
-        step_no: int,
-        distances: np.ndarray,
-        rank_order_of_closest_entities: np.ndarray,
-    ):
-        if step_no % 1 == 0:
-            self.entities_in_radius = self.set_entities_in_radius_vec(
-                entities, distances, rank_order_of_closest_entities
+    def set_closest_entities_by_class(
+            self,
+            entities_dict: Dict[str, List[BaseEntity]]
+    ) -> Dict[str, Dict[str, Union[int, BaseEntity]]]:
+        """
+        Calculates the closest entity by class
+        """
+        closest_entities_by_class = {}
+        classes_in_entities = set(entities_dict.keys())
+        for entity_class in classes_in_entities:
+            entities_of_class = [e for e in copy(entities_dict[entity_class]) if e.alive]
+            if len(entities_of_class) == 0:
+                continue
+            if entity_class == self.entity.entity_class:
+                try:
+                    entities_of_class.remove(self.entity)
+                except:
+                    pass
+            positions = np.array([e.position for e in entities_of_class])
+            distances = distance_between_points_vectorized(
+                self.position, positions, self.board_size
             )
-            # self.entities_in_radius = self.set_entities_in_radius(entities)
+            min_index = distances.argmin()
+            dist = distances[min_index]
+            if dist <= self.area_radius:
+                closest_entities_by_class[entity_class] = {
+                    "distance": dist,
+                    "entity": entities_of_class[min_index]
+                }
+        return closest_entities_by_class
+
+    def set_closest_entities(self, entity_classes_set, entities, distances):
+        """
+        Calculates the closest entity
+        """
+        closest_entities_by_class = {}
+        if len(distances) == 0:
+            positions = np.array([e.position for e in entities if e.alive])
+            distances = distance_between_points_vectorized(self.entity.position, positions, self.board_size)
         else:
-            self.entities_in_radius = self.update_entities_in_radius(showing_entities)
+            o = 0
+        # distances = distances[1:]
+        for entity_class in entity_classes_set:
+            nearest_class_entity = None
+            nearest_dist = self.area_radius + 1
+            for i, e in enumerate(entities):
+                if e.entity_class != entity_class:
+                    continue
+                if e == self.entity:
+                    continue
+                else:
+                    dist = distances[i]
+                    if nearest_dist is None or nearest_class_entity is None:
+                        nearest_dist = dist
+                        nearest_class_entity = e
+                    elif dist < nearest_dist:
+                        nearest_dist = dist
+                        nearest_class_entity = e
+            if nearest_dist <= self.area_radius:
+                closest_entities_by_class[entity_class] = {
+                    "distance": nearest_dist,
+                    "entity": nearest_class_entity
+                }
+        return closest_entities_by_class
+
+    def set(
+            self,
+            entities,
+            entity_classes_set,
+            distances
+    ):
+        # self.closest_entities_by_class = self.set_closest_entities_by_class(entities_dict)
+        self.closest_entities_by_class = self.set_closest_entities(entity_classes_set, entities, distances)
         return self

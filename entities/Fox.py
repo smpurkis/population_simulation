@@ -13,7 +13,7 @@ class Fox(BaseAnimal):
         base_health: int = 500,
         base_hunger: int = 100,
         base_lifespan: int = 10_000,
-        base_reproduce_cycle: int = 1_000,
+        base_reproduce_cycle: int = 200,
         genes=None,
         *args,
         **kwargs,

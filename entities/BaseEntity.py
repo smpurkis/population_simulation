@@ -19,6 +19,7 @@ class BaseEntity(object):
         colour: str = None,
         board_size: Tuple[float] = (100.0, 100.0),
     ):
+        self.id = random.randint(1, 100_000_000_000_000)
         self.entity_class = entity_class
         self.vision_radius = 0
         self.point = None
@@ -47,7 +48,6 @@ class BaseEntity(object):
                 random.uniform(0, self.board_size[1]),
             ]
         )
-        # position = [random.uniform(0, self.board_size[0]), random.uniform(0, self.board_size[1])]
         return position
 
     def update_death_age(self):
@@ -77,7 +77,7 @@ class BaseEntity(object):
         else:
             self.update_death_age()
 
-    def step(self, entities, showing_entities, step_no: int):
+    def step(self, entities, entities_dict):
         """
         Takes the next step for this animal
         :param entities:
@@ -117,24 +117,15 @@ class BaseEntity(object):
         :param entity_class: find nearest entity of this type
         :return:
         """
-        nearest_entity = None
         if entity_class is None:
-            if len(self.world_area.entities_in_radius) == 0:
-                return None
-            return self.world_area.entities_in_radius[0]
+            nearest_entity_with_distance = None
+            for entity_with_distance in self.world_area.closest_entities_by_class.items():
+                if nearest_entity_with_distance is None:
+                    nearest_entity_with_distance = entity_with_distance
+                else:
+                    if entity_with_distance["distance"] < nearest_entity_with_distance["distance"]:
+                        nearest_entity_with_distance = entity_with_distance
+            nearest_entity = nearest_entity_with_distance.get("entity", None)
         else:
-            # return [e for e in self.world_area.entities_in_radius if e.entity_class == entity_class][0]
-            for entity in [
-                e
-                for e in self.world_area.entities_in_radius
-                if e.entity_class == entity_class and e.alive
-            ]:
-                if entity == self:
-                    continue
-                if nearest_entity is None:
-                    nearest_entity = entity
-                elif self.distance_from_entity(entity) < self.distance_from_entity(
-                    nearest_entity
-                ):
-                    nearest_entity = entity
-            return nearest_entity
+            nearest_entity = self.world_area.closest_entities_by_class.get(entity_class, {}).get("entity", None)
+        return nearest_entity
