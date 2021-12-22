@@ -4,8 +4,10 @@ from typing import Tuple, List, Dict
 
 import matplotlib
 import matplotlib.pyplot as plt
+
 # import ray
 import numpy as np
+
 # from joblib import Parallel, delayed
 from matplotlib import animation
 
@@ -14,8 +16,10 @@ from WorldArea import WorldArea, calculate_world_areas
 from entities import Fox, Grass, Pig
 from entities.BaseAnimal import BaseAnimal
 from entities.BaseEntity import BaseEntity
-from optimised_functions import distance_between_points_vectorized, \
-    calculate_all_distance_between_animals_and_points
+from optimised_functions import (
+    distance_between_points_vectorized,
+    calculate_all_distance_between_animals_and_points,
+)
 
 matplotlib.use("TkAgg")
 # matplotlib.use('WebAgg')
@@ -27,10 +31,10 @@ random.seed(1)
 
 class WorldBoard:
     def __init__(
-            self,
-            board_size: Tuple[float, float] = (100.0, 100.0),
-            initial_populations: Dict[str, int] = None,
-            show_plot: bool = True,
+        self,
+        board_size: Tuple[float, float] = (100.0, 100.0),
+        initial_populations: Dict[str, int] = None,
+        show_plot: bool = True,
     ):
         self.board_size = np.array(board_size)
         self.entities_dict_by_class: Dict[str, List[BaseEntity]] = {}
@@ -81,7 +85,7 @@ class WorldBoard:
         self.set_world_areas()
 
     def spawn_child_animal(
-            self, parent_animal: BaseAnimal, entity_class: str, genes: Genes
+        self, parent_animal: BaseAnimal, entity_class: str, genes: Genes
     ):
         """
         Spawns an animal with the given genes
@@ -114,9 +118,7 @@ class WorldBoard:
             self.showing_animals.append(animal)
         positions = np.array([e.position for e in self.entity_list])
         distances = distance_between_points_vectorized(
-            animal.position,
-            positions,
-            self.board_size
+            animal.position, positions, self.board_size
         )
         world_area = WorldArea(
             entity=animal,
@@ -172,19 +174,22 @@ class WorldBoard:
             if entity.show and isinstance(entity, BaseAnimal)
         ]
 
-
         t = time.time()
         entity_list = [e for e in self.entity_list if e.alive]
         positions = np.array([e.position for e in entity_list])
         alive_animals = [e for e in self.showing_animals if e.alive]
-        animal_positions = np.array([e.position for e in self.showing_animals if e.alive])
+        animal_positions = np.array(
+            [e.position for e in self.showing_animals if e.alive]
+        )
         all_distances = calculate_all_distance_between_animals_and_points(
             animal_positions, positions, self.board_size
         )
         all_distances_time = time.time() - t
 
         world_areas = calculate_world_areas(
-            alive_animals, entity_list, all_distances,
+            alive_animals,
+            entity_list,
+            all_distances,
         )
 
         for animal, world_area in zip(self.showing_animals, world_areas):
@@ -301,5 +306,5 @@ class WorldBoard:
             # if self.step_no > 10:
             #     exit(0)
 
-        ani = animation.FuncAnimation(self.fig, update_plot, interval=50)
+        ani = animation.FuncAnimation(self.fig, update_plot, interval=10)
         plt.show()
