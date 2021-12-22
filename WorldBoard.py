@@ -295,7 +295,7 @@ class WorldBoard:
                     f"step_no: {self.step_no}, time: {time_taken}, average: {avg_time:.2f}ms"
                 )
                 print(
-                    f"Grass: {len([e for e in self.entities_dict.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict.get('fox', []) if e.alive])}"
+                    f"Grass: {len([e for e in self.entities_dict_by_class.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict_by_class.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict_by_class.get('fox', []) if e.alive])}"
                 )
 
             # if self.step_no > 10:
