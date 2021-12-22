@@ -53,7 +53,7 @@ class BaseAnimal(BaseEntity):
 
         self._base_hunger = base_hunger
         self._max_hunger = 500
-        self._base_hunger_rate = 5
+        self._base_hunger_rate = 10
         self.hunger_rate = self._base_hunger_rate
 
         self._base_health = base_health
@@ -290,7 +290,7 @@ class BaseAnimal(BaseEntity):
         self.with_child = True
         self.days_to_birth = self.reproduce_cycle // 5
         self.reproduce_cooldown = self._base_reproduce_cycle
-        health_cost = self._base_health // 2
+        health_cost = self._base_health
         self.health -= health_cost
 
     def give_birth(self) -> Genes:

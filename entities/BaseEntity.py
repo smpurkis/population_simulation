@@ -58,10 +58,10 @@ class BaseEntity(object):
         # If the entity is dead, increment its death age
         self.death_age += 1
 
-        # hide the entity after 50 steps
-        if self.death_age >= 20:
+        # hide the entity after 10 steps
+        if self.death_age >= 10:
             self.show = False
-        elif self.death_age > 10:
+        elif self.death_age > 5:
             # if entity is halfway through decaying, change colour to grey
             self.colour = "grey"
 

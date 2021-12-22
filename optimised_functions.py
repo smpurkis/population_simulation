@@ -1,11 +1,11 @@
 import math
 
-import numba
+# import numba
 import numpy as np
 from numpy import ndarray
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True, boundscheck=False, inline="always")
 def distance_between_points(point_1: ndarray, point_2: ndarray, board_size: ndarray):
     # pythran export distance_between_points(float [], float [], float [])
     """
@@ -25,7 +25,7 @@ def distance_between_points(point_1: ndarray, point_2: ndarray, board_size: ndar
     return distance
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True, boundscheck=False, inline="always")
 def angle_between(position_1, position_2) -> float:
     # pythran export angle_between(float [], float [])
     """
@@ -39,19 +39,19 @@ def angle_between(position_1, position_2) -> float:
     return angle
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True, boundscheck=False, inline="always")
 def deg2rad(x: float) -> float:
     # pythran export deg2rad(float)
     return x * math.pi / 180.0
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True, boundscheck=False, inline="always")
 def rad2deg(x: float) -> float:
     # pythran export rad2deg(float)
     return x * 180.0 / math.pi
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True, boundscheck=False, inline="always")
 def correct_boundaries(new_position: ndarray, board_size: ndarray) -> ndarray:
     # pythran export correct_boundaries(float [], float [])
     """
@@ -72,7 +72,7 @@ def correct_boundaries(new_position: ndarray, board_size: ndarray) -> ndarray:
     return new_position
 
 
-@numba.njit(fastmath=True)
+# @numba.njit(fastmath=True, boundscheck=False, inline="always")
 def distance_between_points_vectorized(
         entity_position: ndarray, positions: ndarray, board_size: ndarray
 ) -> ndarray:
@@ -86,13 +86,14 @@ def distance_between_points_vectorized(
     return distances
 
 
-@numba.njit(fastmath=True, parallel=True)
+# @numba.njit(fastmath=True, parallel=True, boundscheck=False, inline="always")
 def calculate_all_distance_between_animals_and_points(animal_positions: ndarray, positions: ndarray,
                                                       board_size: ndarray):
     # pythran export calculate_all_distance_between_animals_and_points(float [][], float [][], float [])
     all_distances = np.zeros(shape=(animal_positions.shape[0], positions.shape[0]))
+
     # omp parallel for
-    for animal_index in numba.prange(animal_positions.shape[0]):
+    for animal_index in range(animal_positions.shape[0]):
         animal_pos = animal_positions[animal_index]
         for other_index in range(positions.shape[0]):
             other_pos = positions[other_index]
@@ -101,12 +102,13 @@ def calculate_all_distance_between_animals_and_points(animal_positions: ndarray,
     return all_distances
 
 
-@numba.njit(fastmath=True, parallel=True)
+# @numba.njit(fastmath=True, parallel=True, boundscheck=False, inline="always")
 def calculate_all_distance_between_points(positions: ndarray, board_size: ndarray):
     # pythran export calculate_all_distance_between_points(float [][], float [])
     all_distances = np.zeros(shape=(positions.shape[0], positions.shape[0]))
+
     # omp parallel for
-    for i in numba.prange((positions.shape[0] // 2) + 1):
+    for i in range((positions.shape[0] // 2) + 1):
         for j in range(positions.shape[0]):
             if i == j:
                 # all_distances[i, j] = 0

@@ -213,12 +213,12 @@ class WorldBoard:
                 )
                 self.spawn_plants(number_to_spawn=number_to_spawn)
         plant_spawn_time = time.time() - s
-        # print(
-        #     f"Distance calculation time: {all_distances_time:.3f}, "
-        #     f"Animal world area set time: {animal_update_world_area_time:.3f}, "
-        #     f"Animals action time: {animal_action_time:.3f}, "
-        #     f"Spawn plants time: {plant_spawn_time:.3f}"
-        # )
+        print(
+            f"Distance calculation time: {all_distances_time:.3f}, "
+            f"Animal world area set time: {animal_update_world_area_time:.3f}, "
+            f"Animals action time: {animal_action_time:.3f}, "
+            f"Spawn plants time: {plant_spawn_time:.3f}"
+        )
         o = 0
 
     def _setup_plot(self):
