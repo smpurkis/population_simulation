@@ -1,22 +1,32 @@
 import random
 import time
-from copy import copy
 from typing import Tuple, List, Dict
 
 import matplotlib
 import matplotlib.pyplot as plt
+
+# import ray
 import numpy as np
+
+# from joblib import Parallel, delayed
 from matplotlib import animation
 
 from Genes import Genes
-from WorldArea import WorldArea
+from WorldArea import WorldArea, calculate_world_areas
 from entities import Fox, Grass, Pig
 from entities.BaseAnimal import BaseAnimal
 from entities.BaseEntity import BaseEntity
+from optimised_functions import (
+    distance_between_points_vectorized,
+    calculate_all_distance_between_animals_and_points,
+)
 
 matplotlib.use("TkAgg")
 # matplotlib.use('WebAgg')
 random.seed(1)
+
+
+# ray.init(num_cpus=2)
 
 
 class WorldBoard:
@@ -27,7 +37,8 @@ class WorldBoard:
         show_plot: bool = True,
     ):
         self.board_size = np.array(board_size)
-        self.entities_dict: Dict[str, List[BaseEntity]] = {}
+        self.entities_dict_by_class: Dict[str, List[BaseEntity]] = {}
+        self.entities_dict: Dict[str, BaseEntity] = {}
         self.entity_list: List[BaseEntity] = []
         self.showing_animals: List[BaseEntity] = []
         self.step_no: int = 0
@@ -57,9 +68,9 @@ class WorldBoard:
                 )
                 entity.point = point
 
-            if self.entities_dict.get(entity_class) is None:
-                self.entities_dict[entity_class] = []
-            self.entities_dict[entity_class].append(entity)
+            if self.entities_dict_by_class.get(entity_class) is None:
+                self.entities_dict_by_class[entity_class] = []
+            self.entities_dict_by_class[entity_class].append(entity)
             self.entity_list.append(entity)
             if isinstance(entity, BaseAnimal):
                 self.showing_animals.append(entity)
@@ -99,29 +110,46 @@ class WorldBoard:
                 markersize=80 / (self.board_size[0] ** 0.5),
             )
             animal.point = point
-        other_entities = copy(self.entity_list)
+
+        self.entity_list.append(animal)
+        self.entities_dict[animal.id] = animal
+        self.entities_dict_by_class[entity_class].append(animal)
+        if isinstance(animal, BaseAnimal):
+            self.showing_animals.append(animal)
+        positions = np.array([e.position for e in self.entity_list])
+        distances = distance_between_points_vectorized(
+            animal.position, positions, self.board_size
+        )
         world_area = WorldArea(
+            entity=animal,
             area_radius=animal.vision_radius,
-            entities=other_entities,
             position=animal.position,
             board_size=self.board_size,
         )
+        world_area.set(
+            distances=distances,
+            entities=self.entity_list,
+            entity_classes_set={e.entity_class for e in self.entity_list},
+        )
         animal.world_area = world_area
-        self.entity_list.append(animal)
-        self.entities_dict[entity_class].append(animal)
-        if isinstance(animal, BaseAnimal):
-            self.showing_animals.append(animal)
 
     def set_world_areas(self):
         s = time.time()
-        for entity in self.showing_animals:
-            other_entities = copy(self.entity_list)
-            other_entities.remove(entity)
+        positions = np.array([e.position for e in self.entity_list])
+        # all_distances = calculate_all_distance_between_points(positions, self.board_size)
+        for i, entity in enumerate(self.showing_animals):
+            # distances = all_distances[i]
+            distances = np.array([])
             world_area = WorldArea(
+                entity=entity,
                 area_radius=entity.vision_radius,
-                entities=other_entities,
                 position=entity.position,
                 board_size=self.board_size,
+            )
+            world_area.set(
+                distances=distances,
+                entities=self.entity_list,
+                entity_classes_set={e.entity_class for e in self.entity_list},
             )
             entity.world_area = world_area
         print(f"Set World areas in: {time.time() - s}")
@@ -138,6 +166,7 @@ class WorldBoard:
     def step(self):
         # TODO - Investigate parallel choose_action events
         self.step_no += 1
+        s = time.time()
 
         self.showing_animals = [
             entity
@@ -145,11 +174,32 @@ class WorldBoard:
             if entity.show and isinstance(entity, BaseAnimal)
         ]
 
+        t = time.time()
+        entity_list = [e for e in self.entity_list if e.alive]
+        positions = np.array([e.position for e in entity_list])
+        alive_animals = [e for e in self.showing_animals if e.alive]
+        animal_positions = np.array(
+            [e.position for e in self.showing_animals if e.alive]
+        )
+        all_distances = calculate_all_distance_between_animals_and_points(
+            animal_positions, positions, self.board_size
+        )
+        all_distances_time = time.time() - t
+
+        world_areas = calculate_world_areas(
+            alive_animals,
+            entity_list,
+            all_distances,
+        )
+
+        for animal, world_area in zip(self.showing_animals, world_areas):
+            animal.world_area = world_area
+
+        animal_update_world_area_time = time.time() - s
+
         s = time.time()
         for animal in self.entity_list:
-            other_entities = copy(self.entity_list)
-            other_entities.remove(animal)
-            output = animal.step(other_entities, self.showing_animals, self.step_no)
+            output = animal.step(entity_list, self.showing_animals)
             if output is not None:
                 self.spawn_child_animal(animal, animal.entity_class, output)
         animal_action_time = time.time() - s
@@ -168,9 +218,13 @@ class WorldBoard:
                 )
                 self.spawn_plants(number_to_spawn=number_to_spawn)
         plant_spawn_time = time.time() - s
-        # print(
-        #     f"Animals action time: {animal_action_time:.3f}, Spawn plants time: {plant_spawn_time:.3f}"
-        # )
+        print(
+            f"Distance calculation time: {all_distances_time:.3f}, "
+            f"Animal world area set time: {animal_update_world_area_time:.3f}, "
+            f"Animals action time: {animal_action_time:.3f}, "
+            f"Spawn plants time: {plant_spawn_time:.3f}"
+        )
+        o = 0
 
     def _setup_plot(self):
         self.fig = plt.figure(figsize=(12, 10))
@@ -246,11 +300,11 @@ class WorldBoard:
                     f"step_no: {self.step_no}, time: {time_taken}, average: {avg_time:.2f}ms"
                 )
                 print(
-                    f"Grass: {len([e for e in self.entities_dict.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict.get('fox', []) if e.alive])}"
+                    f"Grass: {len([e for e in self.entities_dict_by_class.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict_by_class.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict_by_class.get('fox', []) if e.alive])}"
                 )
 
             # if self.step_no > 10:
             #     exit(0)
 
-        ani = animation.FuncAnimation(self.fig, update_plot, interval=20)
+        ani = animation.FuncAnimation(self.fig, update_plot, interval=10)
         plt.show()

@@ -19,6 +19,7 @@ class BaseEntity(object):
         colour: str = None,
         board_size: Tuple[float] = (100.0, 100.0),
     ):
+        self.id = random.randint(1, 100_000_000_000_000)
         self.entity_class = entity_class
         self.vision_radius = 0
         self.point = None
@@ -57,10 +58,10 @@ class BaseEntity(object):
         # If the entity is dead, increment its death age
         self.death_age += 1
 
-        # hide the entity after 50 steps
-        if self.death_age >= 20:
+        # hide the entity after 10 steps
+        if self.death_age >= 10:
             self.show = False
-        elif self.death_age > 10:
+        elif self.death_age > 5:
             # if entity is halfway through decaying, change colour to grey
             self.colour = "grey"
 
@@ -76,7 +77,7 @@ class BaseEntity(object):
         else:
             self.update_death_age()
 
-    def step(self, entities, showing_entities, step_no: int):
+    def step(self, entities, entities_dict):
         """
         Takes the next step for this animal
         :param entities:
@@ -117,15 +118,21 @@ class BaseEntity(object):
         :return:
         """
         if entity_class is None:
-            if len(self.world_area.entities_in_radius) == 0:
-                return None
-            return self.world_area.entities_in_radius[0]
+            nearest_entity_with_distance = None
+            for (
+                entity_with_distance
+            ) in self.world_area.closest_entities_by_class.items():
+                if nearest_entity_with_distance is None:
+                    nearest_entity_with_distance = entity_with_distance
+                else:
+                    if (
+                        entity_with_distance["distance"]
+                        < nearest_entity_with_distance["distance"]
+                    ):
+                        nearest_entity_with_distance = entity_with_distance
+            nearest_entity = nearest_entity_with_distance.get("entity", None)
         else:
-            nearest_entity = [
-                e
-                for e in self.world_area.entities_in_radius
-                if e.entity_class == entity_class and e.alive
-            ]
-            if len(nearest_entity) == 0:
-                return None
-            return nearest_entity[0]
+            nearest_entity = self.world_area.closest_entities_by_class.get(
+                entity_class, {}
+            ).get("entity", None)
+        return nearest_entity

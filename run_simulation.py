@@ -9,7 +9,7 @@ def game_loop(board_size, initial_populations):
     :return:
     """
     board = WorldBoard(
-        board_size=board_size, show_plot=True, initial_populations=initial_populations
+        board_size=board_size, initial_populations=initial_populations, show_plot=True
     )
     board.run()
 

@@ -1,13 +1,13 @@
 import math
 import random
 import time
-from typing import List
+from typing import List, Dict
 
 import numpy as np
 
 from Genes import Genes, combined_genes
 from entities.BaseEntity import BaseEntity
-from optimised_functions import deg2rad, rad2deg, angle_between, correct_boundaries
+from optimised_functions import deg2rad, angle_between, correct_boundaries
 
 
 class BaseAnimal(BaseEntity):
@@ -53,7 +53,7 @@ class BaseAnimal(BaseEntity):
 
         self._base_hunger = base_hunger
         self._max_hunger = 500
-        self._base_hunger_rate = 5
+        self._base_hunger_rate = 10
         self.hunger_rate = self._base_hunger_rate
 
         self._base_health = base_health
@@ -182,8 +182,7 @@ class BaseAnimal(BaseEntity):
 
     def step(
         self,
-        entities: List[BaseEntity],
-        showing_entities: List[BaseEntity],
+        entities_dict: Dict[int, BaseEntity],
         step_no: int,
     ):
         """
@@ -191,7 +190,7 @@ class BaseAnimal(BaseEntity):
         :return:
         """
         # s = time.time()
-        self.world_area.update(entities, showing_entities, step_no)
+        # self.world_area.update(entities, showing_entities, step_no, all_distances, rank_order_of_closest_entities)
         # print(f"Update world area: {time.time() - s:.3f}")
         # s = time.time()
         self.update_status()
@@ -291,7 +290,7 @@ class BaseAnimal(BaseEntity):
         self.with_child = True
         self.days_to_birth = self.reproduce_cycle // 5
         self.reproduce_cooldown = self._base_reproduce_cycle
-        health_cost = self._base_health // 2
+        health_cost = self._base_health
         self.health -= health_cost
 
     def give_birth(self) -> Genes:
