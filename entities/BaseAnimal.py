@@ -185,8 +185,6 @@ class BaseAnimal(BaseEntity):
     def step(
         self,
         entities: List[BaseEntity],
-        showing_entities: List[BaseEntity],
-        step_no: int,
         entities_dict: Dict[str, List[BaseEntity]]
     ):
         """
@@ -194,7 +192,7 @@ class BaseAnimal(BaseEntity):
         :return:
         """
         # s = time.time()
-        self.world_area.update(entities, showing_entities, step_no, entities_dict)
+        self.world_area.update(entities, entities_dict)
         # print(f"Update world area: {time.time() - s:.3f}")
         # s = time.time()
         self.update_status()

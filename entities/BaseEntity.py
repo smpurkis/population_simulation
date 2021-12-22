@@ -19,6 +19,7 @@ class BaseEntity(object):
         colour: str = None,
         board_size: Tuple[float] = (100.0, 100.0),
     ):
+        self.id = random.randint(1, 100_000_000_000_000)
         self.entity_class = entity_class
         self.vision_radius = 0
         self.point = None
@@ -76,7 +77,7 @@ class BaseEntity(object):
         else:
             self.update_death_age()
 
-    def step(self, entities, showing_entities, step_no: int, entities_dict):
+    def step(self, entities, entities_dict):
         """
         Takes the next step for this animal
         :param entities:

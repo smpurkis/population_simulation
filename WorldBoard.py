@@ -27,7 +27,8 @@ class WorldBoard:
         show_plot: bool = True,
     ):
         self.board_size = np.array(board_size)
-        self.entities_dict: Dict[str, List[BaseEntity]] = {}
+        self.entities_dict_by_class: Dict[str, List[BaseEntity]] = {}
+        self.entities_dict: Dict[str, BaseEntity] = {}
         self.entity_list: List[BaseEntity] = []
         self.showing_animals: List[BaseEntity] = []
         self.step_no: int = 0
@@ -57,10 +58,11 @@ class WorldBoard:
                 )
                 entity.point = point
 
-            if self.entities_dict.get(entity_class) is None:
-                self.entities_dict[entity_class] = []
-            self.entities_dict[entity_class].append(entity)
+            if self.entities_dict_by_class.get(entity_class) is None:
+                self.entities_dict_by_class[entity_class] = []
+            self.entities_dict_by_class[entity_class].append(entity)
             self.entity_list.append(entity)
+            self.entities_dict[entity.id] = entity
             if isinstance(entity, BaseAnimal):
                 self.showing_animals.append(entity)
 
@@ -103,14 +105,14 @@ class WorldBoard:
         world_area = WorldArea(
             entity=animal,
             area_radius=animal.vision_radius,
-            entities_dict=self.entities_dict,
-            entities=other_entities,
+            entities_dict=self.entities_dict_by_class,
             position=animal.position,
             board_size=self.board_size,
         )
         animal.world_area = world_area
         self.entity_list.append(animal)
-        self.entities_dict[entity_class].append(animal)
+        self.entities_dict[animal.id] = animal
+        self.entities_dict_by_class[entity_class].append(animal)
         if isinstance(animal, BaseAnimal):
             self.showing_animals.append(animal)
 
@@ -122,8 +124,7 @@ class WorldBoard:
             world_area = WorldArea(
                 entity=entity,
                 area_radius=entity.vision_radius,
-                entities_dict=self.entities_dict,
-                entities=other_entities,
+                entities_dict=self.entities_dict_by_class,
                 position=entity.position,
                 board_size=self.board_size,
             )
@@ -153,7 +154,7 @@ class WorldBoard:
         for animal in self.entity_list:
             other_entities = copy(self.entity_list)
             other_entities.remove(animal)
-            output = animal.step(other_entities, self.showing_animals, self.step_no, self.entities_dict)
+            output = animal.step(other_entities, self.entities_dict_by_class)
             if output is not None:
                 self.spawn_child_animal(animal, animal.entity_class, output)
         animal_action_time = time.time() - s
@@ -201,7 +202,7 @@ class WorldBoard:
                     f"day: {self.step_no}, time: {time_taken}, average: {avg_time:.2f}ms"
                 )
                 print(
-                    f"Grass: {len([e for e in self.entities_dict.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict.get('fox', []) if e.alive])}"
+                    f"Grass: {len([e for e in self.entities_dict_by_class.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict_by_class.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict_by_class.get('fox', []) if e.alive])}"
                 )
             if self.step_no > 10:
                 exit(0)
@@ -250,7 +251,7 @@ class WorldBoard:
                     f"step_no: {self.step_no}, time: {time_taken}, average: {avg_time:.2f}ms"
                 )
                 print(
-                    f"Grass: {len([e for e in self.entities_dict.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict.get('fox', []) if e.alive])}"
+                    f"Grass: {len([e for e in self.entities_dict_by_class.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict_by_class.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict_by_class.get('fox', []) if e.alive])}"
                 )
 
             # if self.step_no > 10:
