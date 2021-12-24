@@ -73,3 +73,16 @@ class WorldArea:
             entity_classes_set, entities, distances
         )
         return self
+
+    def set_nearest_ids(self, nearest_ids, nearest_distances, entities_dict):
+        for i, nearest_id in enumerate(nearest_ids):
+            if nearest_id == 0:
+                continue
+            nearest_distance = nearest_distances[i]
+            entity = entities_dict[nearest_id]
+            if not self.closest_entities_by_class.get(entity.entity_class, False):
+                self.closest_entities_by_class[entity.entity_class] = {}
+            self.closest_entities_by_class[entity.entity_class]["entity"] = entity
+            self.closest_entities_by_class[entity.entity_class][
+                "distance"
+            ] = nearest_distance

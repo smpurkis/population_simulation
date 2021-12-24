@@ -12,13 +12,14 @@ import numpy as np
 from matplotlib import animation
 
 from Genes import Genes
-from WorldArea import WorldArea, calculate_world_areas
+from WorldArea import WorldArea
 from entities import Fox, Grass, Pig
 from entities.BaseAnimal import BaseAnimal
 from entities.BaseEntity import BaseEntity
 from optimised_functions import (
     distance_between_points_vectorized,
-    calculate_all_distance_between_animals_and_points,
+    calculate_all_distance_between_animals_and_points_vectorized,
+    calculate_all_nearest_ids_to_entity_vectorized,
 )
 
 matplotlib.use("TkAgg")
@@ -71,6 +72,7 @@ class WorldBoard:
             if self.entities_dict_by_class.get(entity_class) is None:
                 self.entities_dict_by_class[entity_class] = []
             self.entities_dict_by_class[entity_class].append(entity)
+            self.entities_dict[entity.id] = entity
             self.entity_list.append(entity)
             if isinstance(entity, BaseAnimal):
                 self.showing_animals.append(entity)
@@ -181,27 +183,69 @@ class WorldBoard:
         animal_positions = np.array(
             [e.position for e in self.showing_animals if e.alive]
         )
-        all_distances = calculate_all_distance_between_animals_and_points(
-            animal_positions, positions, self.board_size
+        animal_position_indices = np.array(
+            [
+                np.array([i, self.entity_list.index(e)])
+                for i, e in enumerate(alive_animals)
+            ]
         )
+
+        p = time.time()
+        all_distances = calculate_all_distance_between_animals_and_points_vectorized(
+            animal_positions, positions, self.board_size, animal_position_indices
+        )
+        # print("all_distances_vect", time.time() - p)
+        # p = time.time()
+        # all_distances = calculate_all_distance_between_animals_and_points(
+        #     animal_positions, positions, self.board_size
+        # )
+        # print("all_distances", time.time() - p)
         all_distances_time = time.time() - t
 
-        world_areas = calculate_world_areas(
-            alive_animals,
-            entity_list,
-            all_distances,
+        t = time.time()
+        # calculate the nearest entity per entity class for each animal vectorized
+        animal_entity_ids = np.array([e.id for e in alive_animals])
+        entity_ids = np.array([e.id for e in entity_list])
+        entity_classes = np.array([e.entity_class_id for e in entity_list])
+        area_radiuses = np.array([e.world_area.area_radius for e in alive_animals])
+        (
+            nearest_ids_per_entity_class_for_each_animal,
+            nearest_distances_per_entity_class_for_each_animal,
+        ) = calculate_all_nearest_ids_to_entity_vectorized(
+            animal_entity_ids, entity_ids, all_distances, entity_classes, area_radiuses
         )
+        # print("calculate_all_nearest_ids_to_entity", time.time() - t)
 
-        for animal, world_area in zip(self.showing_animals, world_areas):
-            animal.world_area = world_area
+        t = time.time()
+        for animal_nearest_ids_details, animal_nearest_distances_details in zip(
+            nearest_ids_per_entity_class_for_each_animal[:],
+            nearest_distances_per_entity_class_for_each_animal[:],
+        ):
+            animal_id = animal_nearest_ids_details[0]
+            animal = self.entities_dict[animal_id]
+            animal.world_area.set_nearest_ids(
+                animal_nearest_ids_details[1:],
+                animal_nearest_distances_details[1:],
+                self.entities_dict,
+            )
+        # print("set_nearest_ids", time.time() - t)
+
+        # world_areas = calculate_world_areas(
+        #     alive_animals,
+        #     entity_list,
+        #     all_distances,
+        # )
+
+        # for animal, world_area in zip(self.showing_animals, world_areas):
+        #     animal.world_area = world_area
 
         animal_update_world_area_time = time.time() - s
 
         s = time.time()
-        for animal in self.entity_list:
-            output = animal.step(entity_list, self.showing_animals)
+        for entity in self.entity_list:
+            output = entity.step(entity_list, self.showing_animals)
             if output is not None:
-                self.spawn_child_animal(animal, animal.entity_class, output)
+                self.spawn_child_animal(entity, entity.entity_class, output)
         animal_action_time = time.time() - s
 
         s = time.time()
@@ -212,18 +256,21 @@ class WorldBoard:
             ) * int(float(self.board_size[0] * self.board_size[1] / 100 ** 2) ** 0.5)
             base_number_to_spawn = max(base_number_to_spawn, 1)
             spawn_plants = random.randrange(100) <= 5
+            spawn_plants = (
+                False if len(self.entities_dict_by_class["grass"]) > 2 else spawn_plants
+            )
             if spawn_plants:
                 number_to_spawn = random.choice(
                     list(range(base_number_to_spawn, 4 * base_number_to_spawn))
                 )
                 self.spawn_plants(number_to_spawn=number_to_spawn)
         plant_spawn_time = time.time() - s
-        print(
-            f"Distance calculation time: {all_distances_time:.3f}, "
-            f"Animal world area set time: {animal_update_world_area_time:.3f}, "
-            f"Animals action time: {animal_action_time:.3f}, "
-            f"Spawn plants time: {plant_spawn_time:.3f}"
-        )
+        # print(
+        #     f"Distance calculation time: {all_distances_time:.3f}, "
+        #     f"Animal world area set time: {animal_update_world_area_time:.3f}, "
+        #     f"Animals action time: {animal_action_time:.3f}, "
+        #     f"Spawn plants time: {plant_spawn_time:.3f}"
+        # )
         o = 0
 
     def _setup_plot(self):
@@ -306,5 +353,5 @@ class WorldBoard:
             # if self.step_no > 10:
             #     exit(0)
 
-        ani = animation.FuncAnimation(self.fig, update_plot, interval=10)
+        ani = animation.FuncAnimation(self.fig, update_plot, interval=100, blit=False)
         plt.show()
