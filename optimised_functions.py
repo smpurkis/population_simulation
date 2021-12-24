@@ -1,6 +1,6 @@
 import math
 
-import numba
+# import numba
 import numpy as np
 from numpy import ndarray
 
@@ -86,7 +86,7 @@ def distance_between_points_vectorized(
     return distances
 
 
-@numba.njit
+# @numba.njit
 def generate_self_distance_identity_array(self_distances, animal_position_indices):
     for animal_position_index in animal_position_indices:
         self_distances[animal_position_index[0], animal_position_index[1]] = np.inf

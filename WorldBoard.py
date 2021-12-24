@@ -184,10 +184,7 @@ class WorldBoard:
             [e.position for e in self.showing_animals if e.alive]
         )
         animal_position_indices = np.array(
-            [
-                np.array([i, self.entity_list.index(e)])
-                for i, e in enumerate(alive_animals)
-            ]
+            [np.array([i, entity_list.index(e)]) for i, e in enumerate(alive_animals)]
         )
 
         p = time.time()
