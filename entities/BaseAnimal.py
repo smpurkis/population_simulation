@@ -3,7 +3,7 @@ import random
 import time
 from typing import List, Dict
 
-import numpy as np
+import cupy as cp
 
 from Genes import Genes, combined_genes
 from entities.BaseEntity import BaseEntity
@@ -102,16 +102,16 @@ class BaseAnimal(BaseEntity):
         x_step = move_distance * math.cos(angle_rad)
         y_step = move_distance * math.sin(angle_rad)
 
-        new_position = np.array([self.position[0] + x_step, self.position[1] + y_step])
+        new_position = cp.array([self.position[0] + x_step, self.position[1] + y_step])
         # new_position = [self.position[0] + x_step, self.position[1] + y_step]
         self.position = self.correct_boundaries(new_position)
 
         return self.position
 
-    def move_towards(self, entity: BaseEntity) -> np.ndarray:
+    def move_towards(self, entity: BaseEntity) -> cp.ndarray:
         return self.move_towards_position(entity.position)
 
-    def move_towards_position(self, position: np.ndarray) -> np.ndarray:
+    def move_towards_position(self, position: cp.ndarray) -> cp.ndarray:
         """
         Moves the animal towards the position
         :param position:
@@ -123,7 +123,7 @@ class BaseAnimal(BaseEntity):
         x_step = move_distance * math.cos(angle_rad)
         y_step = move_distance * math.sin(angle_rad)
 
-        new_position = np.array([self.position[0] + x_step, self.position[1] + y_step])
+        new_position = cp.array([self.position[0] + x_step, self.position[1] + y_step])
         # new_position = [self.position[0] + x_step, self.position[1] + y_step]
         self.position = self.correct_boundaries(new_position)
 

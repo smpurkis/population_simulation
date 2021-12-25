@@ -2,7 +2,7 @@ import random
 from datetime import datetime as dt
 from typing import Tuple, Optional
 
-import numpy as np
+import cupy as cp
 from matplotlib.lines import Line2D
 
 from optimised_functions import distance_between_points
@@ -27,7 +27,7 @@ class BaseEntity(object):
         self.vision_radius = 0
         self.point = None
         self.colour = colour
-        self.board_size = np.array(board_size)
+        self.board_size = cp.array(board_size)
         # self.board_size = board_size
         self.creation_time = dt.now().time()
         self.age = 0
@@ -40,12 +40,12 @@ class BaseEntity(object):
         self.health = 50
         self.lifespan = 200
 
-    def set_random_position(self) -> np.ndarray:
+    def set_random_position(self) -> cp.ndarray:
         """
         Set random position on the board
         :return:
         """
-        position = np.array(
+        position = cp.array(
             [
                 random.uniform(0, self.board_size[0]),
                 random.uniform(0, self.board_size[1]),
@@ -96,7 +96,7 @@ class BaseEntity(object):
         """
         return self.distance_from_point(entity.position)
 
-    def distance_from_point(self, position: np.ndarray) -> float:
+    def distance_from_point(self, position: cp.ndarray) -> float:
         """
         Calculate distance between two points
         :param position:

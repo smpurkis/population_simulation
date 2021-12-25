@@ -6,7 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 # import ray
-import numpy as np
+import cupy as cp
 
 # from joblib import Parallel, delayed
 from matplotlib import animation
@@ -20,7 +20,9 @@ from optimised_functions import (
     distance_between_points_vectorized,
     calculate_all_distance_between_animals_and_points_vectorized,
     calculate_all_nearest_ids_to_entity_vectorized,
+    calculate_all_distance_between_animals_and_points,
 )
+from tqdm import tqdm
 
 matplotlib.use("TkAgg")
 # matplotlib.use('WebAgg')
@@ -37,7 +39,7 @@ class WorldBoard:
         initial_populations: Dict[str, int] = None,
         show_plot: bool = True,
     ):
-        self.board_size = np.array(board_size)
+        self.board_size = cp.array(board_size)
         self.entities_dict_by_class: Dict[str, List[BaseEntity]] = {}
         self.entities_dict: Dict[str, BaseEntity] = {}
         self.entity_list: List[BaseEntity] = []
@@ -51,7 +53,7 @@ class WorldBoard:
         self.spawn_all_entities(initial_populations)
 
     def spawn(self, entity_class: str, number_to_spawn: int = 100):
-        for i in range(number_to_spawn):
+        for i in tqdm(list(range(number_to_spawn))):
             entity: BaseEntity = None
             if entity_class == "grass":
                 entity = Grass(board_size=self.board_size)
@@ -61,11 +63,11 @@ class WorldBoard:
                 entity = Fox(board_size=self.board_size)
             if hasattr(self, "ax"):
                 (point,) = self.ax.plot(
-                    [entity.position[0]],
-                    [entity.position[1]],
+                    [entity.position.get()[0]],
+                    [entity.position.get()[1]],
                     "x" if entity_class == "grass" else "o",
                     color=entity.colour,
-                    markersize=80 / (self.board_size[0] ** 0.5),
+                    markersize=80 / (self.board_size.get()[0] ** 0.5),
                 )
                 entity.point = point
 
@@ -118,7 +120,7 @@ class WorldBoard:
         self.entities_dict_by_class[entity_class].append(animal)
         if isinstance(animal, BaseAnimal):
             self.showing_animals.append(animal)
-        positions = np.array([e.position for e in self.entity_list])
+        positions = cp.array([e.position for e in self.entity_list])
         distances = distance_between_points_vectorized(
             animal.position, positions, self.board_size
         )
@@ -137,23 +139,15 @@ class WorldBoard:
 
     def set_world_areas(self):
         s = time.time()
-        positions = np.array([e.position for e in self.entity_list])
-        # all_distances = calculate_all_distance_between_points(positions, self.board_size)
-        for i, entity in enumerate(self.showing_animals):
-            # distances = all_distances[i]
-            distances = np.array([])
+        for i, entity in tqdm(list(enumerate(self.showing_animals))):
             world_area = WorldArea(
                 entity=entity,
                 area_radius=entity.vision_radius,
                 position=entity.position,
                 board_size=self.board_size,
             )
-            world_area.set(
-                distances=distances,
-                entities=self.entity_list,
-                entity_classes_set={e.entity_class for e in self.entity_list},
-            )
             entity.world_area = world_area
+        self.calculate_set_world_areas()
         print(f"Set World areas in: {time.time() - s}")
 
     def spawn_plants(self, number_to_spawn: int = 10):
@@ -164,6 +158,58 @@ class WorldBoard:
 
     def spawn_foxes(self, number_to_spawn: int = 2):
         self.spawn(entity_class="fox", number_to_spawn=number_to_spawn)
+
+    def calculate_set_world_areas(self):
+        t = time.time()
+        entity_list = [e for e in self.entity_list if e.alive]
+        positions = cp.array([e.position for e in entity_list])
+        alive_animals = [e for e in self.showing_animals if e.alive]
+        animal_positions = cp.array(
+            [e.position for e in self.showing_animals if e.alive]
+        )
+        animal_position_indices = cp.array(
+            [cp.array([i, entity_list.index(e)]) for i, e in enumerate(alive_animals)]
+        )
+
+        p = time.time()
+        all_distances = calculate_all_distance_between_animals_and_points_vectorized(
+            animal_positions, positions, self.board_size, animal_position_indices
+        )
+        # print("all_distances_vect", time.time() - p)
+        # p = time.time()
+        # all_distances = calculate_all_distance_between_animals_and_points(
+        #     animal_positions, positions, self.board_size
+        # )
+        print("all_distances", time.time() - p)
+        all_distances_time = time.time() - t
+
+        t = time.time()
+        # calculate the nearest entity per entity class for each animal vectorized
+        animal_entity_ids = cp.array([e.id for e in alive_animals])
+        entity_ids = cp.array([e.id for e in entity_list])
+        entity_classes = cp.array([e.entity_class_id for e in entity_list])
+        area_radiuses = cp.array([e.world_area.area_radius for e in alive_animals])
+        (
+            nearest_ids_per_entity_class_for_each_animal,
+            nearest_distances_per_entity_class_for_each_animal,
+        ) = calculate_all_nearest_ids_to_entity_vectorized(
+            animal_entity_ids, entity_ids, all_distances, entity_classes, area_radiuses
+        )
+        print("calculate_all_nearest_ids_to_entity", time.time() - t)
+
+        t = time.time()
+        for animal_nearest_ids_details, animal_nearest_distances_details in zip(
+            nearest_ids_per_entity_class_for_each_animal[:],
+            nearest_distances_per_entity_class_for_each_animal[:],
+        ):
+            animal_id = animal_nearest_ids_details.get()[0]
+            animal = self.entities_dict[animal_id]
+            animal.world_area.set_nearest_ids(
+                animal_nearest_ids_details.get()[1:],
+                animal_nearest_distances_details.get()[1:],
+                self.entities_dict,
+            )
+        print("set_nearest_ids", time.time() - t)
 
     def step(self):
         # TODO - Investigate parallel choose_action events
@@ -176,56 +222,8 @@ class WorldBoard:
             if entity.show and isinstance(entity, BaseAnimal)
         ]
 
-        t = time.time()
+        self.calculate_set_world_areas()
         entity_list = [e for e in self.entity_list if e.alive]
-        positions = np.array([e.position for e in entity_list])
-        alive_animals = [e for e in self.showing_animals if e.alive]
-        animal_positions = np.array(
-            [e.position for e in self.showing_animals if e.alive]
-        )
-        animal_position_indices = np.array(
-            [np.array([i, entity_list.index(e)]) for i, e in enumerate(alive_animals)]
-        )
-
-        p = time.time()
-        all_distances = calculate_all_distance_between_animals_and_points_vectorized(
-            animal_positions, positions, self.board_size, animal_position_indices
-        )
-        # print("all_distances_vect", time.time() - p)
-        # p = time.time()
-        # all_distances = calculate_all_distance_between_animals_and_points(
-        #     animal_positions, positions, self.board_size
-        # )
-        # print("all_distances", time.time() - p)
-        all_distances_time = time.time() - t
-
-        t = time.time()
-        # calculate the nearest entity per entity class for each animal vectorized
-        animal_entity_ids = np.array([e.id for e in alive_animals])
-        entity_ids = np.array([e.id for e in entity_list])
-        entity_classes = np.array([e.entity_class_id for e in entity_list])
-        area_radiuses = np.array([e.world_area.area_radius for e in alive_animals])
-        (
-            nearest_ids_per_entity_class_for_each_animal,
-            nearest_distances_per_entity_class_for_each_animal,
-        ) = calculate_all_nearest_ids_to_entity_vectorized(
-            animal_entity_ids, entity_ids, all_distances, entity_classes, area_radiuses
-        )
-        # print("calculate_all_nearest_ids_to_entity", time.time() - t)
-
-        t = time.time()
-        for animal_nearest_ids_details, animal_nearest_distances_details in zip(
-            nearest_ids_per_entity_class_for_each_animal[:],
-            nearest_distances_per_entity_class_for_each_animal[:],
-        ):
-            animal_id = animal_nearest_ids_details[0]
-            animal = self.entities_dict[animal_id]
-            animal.world_area.set_nearest_ids(
-                animal_nearest_ids_details[1:],
-                animal_nearest_distances_details[1:],
-                self.entities_dict,
-            )
-        # print("set_nearest_ids", time.time() - t)
 
         # world_areas = calculate_world_areas(
         #     alive_animals,
@@ -262,12 +260,12 @@ class WorldBoard:
                 )
                 self.spawn_plants(number_to_spawn=number_to_spawn)
         plant_spawn_time = time.time() - s
-        # print(
-        #     f"Distance calculation time: {all_distances_time:.3f}, "
-        #     f"Animal world area set time: {animal_update_world_area_time:.3f}, "
-        #     f"Animals action time: {animal_action_time:.3f}, "
-        #     f"Spawn plants time: {plant_spawn_time:.3f}"
-        # )
+        print(
+            # f"Distance calculation time: {all_distances_time:.3f}, "
+            f"Animal world area set time: {animal_update_world_area_time:.3f}, "
+            f"Animals action time: {animal_action_time:.3f}, "
+            f"Spawn plants time: {plant_spawn_time:.3f}"
+        )
         o = 0
 
     def _setup_plot(self):
@@ -321,7 +319,9 @@ class WorldBoard:
                     point = entity.point
                     if entity.show:
                         if isinstance(entity, BaseAnimal):
-                            point.set_data([entity.position[0], entity.position[1]])
+                            point.set_data(
+                                [entity.position.get()[0], entity.position.get()[1]]
+                            )
                         point._color = entity.colour
                     else:
                         point.set_data([-1, -1])
@@ -329,7 +329,9 @@ class WorldBoard:
                 for entity in self.showing_animals:
                     point = entity.point
                     if entity.show:
-                        point.set_data([entity.position[0], entity.position[1]])
+                        point.set_data(
+                            [entity.position.get()[0], entity.position.get()[1]]
+                        )
                         point._color = entity.colour
                     else:
                         point.set_data([-1, -1])

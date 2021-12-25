@@ -2,7 +2,7 @@ import random
 import struct
 from typing import Tuple, Optional, Union, Dict
 
-import numpy as np
+import cupy as cp
 
 
 def float_to_bin(num: float) -> str:
@@ -55,7 +55,7 @@ class Gene(object):
     def get_random_gene_value(
         mean: float, std: float, min_value: float = 0.5, max_value: float = 1.5
     ):
-        value = float(np.random.normal(mean, std))
+        value = float(cp.random.normal(mean, std))
         if value < min_value:
             value = min_value
         if value > max_value:
@@ -73,7 +73,7 @@ class Gene(object):
         Mutate the gene by randomly changing the value
         :return:
         """
-        mutation_value = np.random.normal(-0.01, 0.05)
+        mutation_value = cp.random.normal(-0.01, 0.05)
         self.float_value += mutation_value
         self.float_value = min(max(self.float_value, self.min_value), self.max_value)
         self.binary_value = float_to_bin(self.float_value)
@@ -150,7 +150,7 @@ class Genes(object):
             + self.reproduce_cycle.get_bit_str()
         )
 
-    def get_bit_array(self) -> Tuple[np.ndarray, np.ndarray]:
+    def get_bit_array(self) -> Tuple[cp.ndarray, cp.ndarray]:
         bit_strs = (
             self.speed.get_bit_str(),
             self.vision_radius.get_bit_str(),
@@ -160,7 +160,7 @@ class Genes(object):
             self.lifespan.get_bit_str(),
             self.reproduce_cycle.get_bit_str(),
         )
-        bit_array_per_gene = np.array(
+        bit_array_per_gene = cp.array(
             [[int(b) for b in bit_str] for bit_str in bit_strs]
         )
         bit_array = bit_array_per_gene.flatten()

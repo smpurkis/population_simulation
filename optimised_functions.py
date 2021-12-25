@@ -1,7 +1,7 @@
 import math
 
 # import numba
-import numpy as np
+import cupy as cp
 from numpy import ndarray
 
 
@@ -77,19 +77,19 @@ def distance_between_points_vectorized(
     entity_position: ndarray, positions: ndarray, board_size: ndarray
 ) -> ndarray:
     # pythran export distance_between_points_vectorized(float [], float [][], float [])
-    abs_diff = np.abs(positions - entity_position)
+    abs_diff = cp.abs(positions - entity_position)
 
-    x_distance = np.minimum(abs_diff[:, 0], board_size[0] - abs_diff[:, 0])
-    y_distance = np.minimum(abs_diff[:, 1], board_size[1] - abs_diff[:, 1])
+    x_distance = cp.minimum(abs_diff[:, 0], board_size[0] - abs_diff[:, 0])
+    y_distance = cp.minimum(abs_diff[:, 1], board_size[1] - abs_diff[:, 1])
 
-    distances = np.sqrt(x_distance ** 2 + y_distance ** 2)
+    distances = cp.sqrt(x_distance ** 2 + y_distance ** 2)
     return distances
 
 
 # @numba.njit
 def generate_self_distance_identity_array(self_distances, animal_position_indices):
     for animal_position_index in animal_position_indices:
-        self_distances[animal_position_index[0], animal_position_index[1]] = np.inf
+        self_distances[animal_position_index[0], animal_position_index[1]] = cp.inf
     return self_distances
 
 
@@ -100,17 +100,17 @@ def calculate_all_distance_between_animals_and_points_vectorized(
     board_size: ndarray,
     animal_position_indices: ndarray,
 ):
-    # pythran export calculate_all_distance_between_animals_and_points(float [][], float [][], float [], int [][])
-    tiled_positions = np.tile(positions, (animal_positions.shape[0], 1, 1)).swapaxes(
+    # pythran export calculate_all_distance_between_animals_and_points_vectorized(float [][], float [][], float [], int [][])
+    tiled_positions = cp.tile(positions, (animal_positions.shape[0], 1, 1)).swapaxes(
         0, 1
-    )
-    tiles_animal_positions = np.tile(animal_positions, (positions.shape[0], 1, 1))
-    x_abs = np.abs(tiled_positions[:, :, 0] - tiles_animal_positions[:, :, 0])
-    x_distance = np.minimum(x_abs, board_size[0] - x_abs)
-    y_abs = np.abs(tiled_positions[:, :, 1] - tiles_animal_positions[:, :, 1])
-    y_distance = np.minimum(y_abs, board_size[1] - y_abs)
-    all_distances = np.sqrt(x_distance ** 2 + y_distance ** 2).swapaxes(0, 1)
-    self_distances = np.zeros(shape=(all_distances.shape[1], all_distances.shape[1]))
+    )  # runs out of memory here on the gpu, so need to use a different function than tile.
+    tiles_animal_positions = cp.tile(animal_positions, (positions.shape[0], 1, 1))
+    x_abs = cp.abs(tiled_positions[:, :, 0] - tiles_animal_positions[:, :, 0])
+    x_distance = cp.minimum(x_abs, board_size[0] - x_abs)
+    y_abs = cp.abs(tiled_positions[:, :, 1] - tiles_animal_positions[:, :, 1])
+    y_distance = cp.minimum(y_abs, board_size[1] - y_abs)
+    all_distances = cp.sqrt(x_distance ** 2 + y_distance ** 2).swapaxes(0, 1)
+    self_distances = cp.zeros(shape=(all_distances.shape[1], all_distances.shape[1]))
     self_distances = self_distances[self_distances.shape[0] - all_distances.shape[0] :]
     self_distances = generate_self_distance_identity_array(
         self_distances, animal_position_indices
@@ -124,7 +124,7 @@ def calculate_all_distance_between_animals_and_points(
     animal_positions: ndarray, positions: ndarray, board_size: ndarray
 ):
     # pythran export calculate_all_distance_between_animals_and_points(float [][], float [][], float [])
-    all_distances = np.zeros(shape=(animal_positions.shape[0], positions.shape[0]))
+    all_distances = cp.zeros(shape=(animal_positions.shape[0], positions.shape[0]))
 
     # omp parallel for
     for animal_index in range(animal_positions.shape[0]):
@@ -139,7 +139,7 @@ def calculate_all_distance_between_animals_and_points(
 # @numba.njit(fastmath=True, parallel=True, boundscheck=False, inline="always")
 def calculate_all_distance_between_points(positions: ndarray, board_size: ndarray):
     # pythran export calculate_all_distance_between_points(float [][], float [])
-    all_distances = np.zeros(shape=(positions.shape[0], positions.shape[0]))
+    all_distances = cp.zeros(shape=(positions.shape[0], positions.shape[0]))
 
     # omp parallel for
     for i in range((positions.shape[0] // 2) + 1):
@@ -155,6 +155,7 @@ def calculate_all_distance_between_points(positions: ndarray, board_size: ndarra
     return all_distances
 
 
+# @numba.njit(fastmath=True, parallel=True, boundscheck=False, inline="always")
 def calculate_all_nearest_ids_to_entity_vectorized(
     animal_entity_ids: ndarray,
     entity_ids: ndarray,
@@ -162,21 +163,21 @@ def calculate_all_nearest_ids_to_entity_vectorized(
     entity_class_ids: ndarray,
     area_radiuses: ndarray,
 ) -> ndarray:
-    nearest_entity_ids_per_entity_class = np.zeros(
-        (animal_entity_ids.shape[0], 1 + entity_class_ids.max()), dtype=np.int64
+    nearest_entity_ids_per_entity_class = cp.zeros(
+        (animal_entity_ids.shape[0], 1 + entity_class_ids.max().get()), dtype=cp.int64
     )
-    nearest_distances_per_entity_class = np.zeros(
-        (animal_entity_ids.shape[0], 1 + entity_class_ids.max()), dtype=np.float64
+    nearest_distances_per_entity_class = cp.zeros(
+        (animal_entity_ids.shape[0], 1 + entity_class_ids.max().get()), dtype=cp.float64
     )
     nearest_entity_ids_per_entity_class[:, 0] = animal_entity_ids
-    for entity_class_id in set(entity_class_ids):
+    for entity_class_id in set(entity_class_ids.get()):
         indices = entity_class_ids == entity_class_id
         distances = all_distances[:, indices]
-        # distances[distances == 0] = np.inf
+        # distances[distances == 0] = cp.inf
         ids = entity_ids[indices]
-        nearest_distances = np.min(distances, axis=1)
+        nearest_distances = cp.min(distances, axis=1)
         not_in_radius = nearest_distances > area_radiuses
-        nearest_ids_indices = np.argmin(distances, axis=1)
+        nearest_ids_indices = cp.argmin(distances, axis=1)
         nearest_ids = ids[nearest_ids_indices]
         nearest_ids[not_in_radius] = 0
         nearest_entity_ids_per_entity_class[:, entity_class_id] = nearest_ids

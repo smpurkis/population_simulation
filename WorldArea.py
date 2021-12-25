@@ -1,7 +1,7 @@
 from copy import copy
 from typing import List, Dict, Union
 
-import numpy as np
+import cupy as cp
 
 from entities.BaseEntity import BaseEntity
 from optimised_functions import distance_between_points_vectorized
@@ -27,13 +27,14 @@ class WorldArea:
         self,
         area_radius: int,
         entity: BaseEntity,
-        position: np.ndarray,
-        board_size: np.ndarray,
+        position: cp.ndarray,
+        board_size: cp.ndarray,
     ):
         self.area_radius = area_radius
         self.position = position
         self.board_size = board_size
         self.entity = entity
+        self.closest_entities_by_class = {}
 
     def set_closest_entities(self, entity_classes_set, entities, distances):
         """
@@ -41,7 +42,7 @@ class WorldArea:
         """
         closest_entities_by_class = {}
         if len(distances) == 0:
-            positions = np.array([e.position for e in entities if e.alive])
+            positions = cp.array([e.position for e in entities if e.alive])
             distances = distance_between_points_vectorized(
                 self.entity.position, positions, self.board_size
             )
