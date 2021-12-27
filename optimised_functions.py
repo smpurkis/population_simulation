@@ -1,6 +1,6 @@
 import math
 
-# import numba
+import numba
 import numpy as np
 from numpy import ndarray
 
@@ -100,11 +100,14 @@ def calculate_all_distance_between_animals_and_points_vectorized(
     board_size: ndarray,
     animal_position_indices: ndarray,
 ):
-    # pythran export calculate_all_distance_between_animals_and_points(float [][], float [][], float [], int [][])
-    tiled_positions = np.tile(positions, (animal_positions.shape[0], 1, 1)).swapaxes(
-        0, 1
+    # pythran export calculate_all_distance_between_animals_and_points_vectorized(float [][], float [][], float [], int [][])
+    tiled_positions = np.broadcast_to(
+        np.expand_dims(positions, axis=1),
+        (positions.shape[0], animal_positions.shape[0], 2),
     )
-    tiles_animal_positions = np.tile(animal_positions, (positions.shape[0], 1, 1))
+    tiles_animal_positions = np.broadcast_to(
+        animal_positions, (positions.shape[0], animal_positions.shape[0], 2)
+    )
     x_abs = np.abs(tiled_positions[:, :, 0] - tiles_animal_positions[:, :, 0])
     x_distance = np.minimum(x_abs, board_size[0] - x_abs)
     y_abs = np.abs(tiled_positions[:, :, 1] - tiles_animal_positions[:, :, 1])
@@ -120,10 +123,10 @@ def calculate_all_distance_between_animals_and_points_vectorized(
 
 
 # @numba.njit(fastmath=True, parallel=True, boundscheck=False, inline="always")
-def calculate_all_distance_between_animals_and_points(
+def calculate_all_distance_between_animals_and_points_parallel(
     animal_positions: ndarray, positions: ndarray, board_size: ndarray
 ):
-    # pythran export calculate_all_distance_between_animals_and_points(float [][], float [][], float [])
+    # pythran export calculate_all_distance_between_animals_and_points_parallel(float [][], float [][], float [])
     all_distances = np.zeros(shape=(animal_positions.shape[0], positions.shape[0]))
 
     # omp parallel for
