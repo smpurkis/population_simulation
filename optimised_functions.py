@@ -101,10 +101,15 @@ def calculate_all_distance_between_animals_and_points_vectorized(
     animal_position_indices: ndarray,
 ):
     # pythran export calculate_all_distance_between_animals_and_points_vectorized(float [][], float [][], float [], int [][])
-    tiled_positions = cp.tile(positions, (animal_positions.shape[0], 1, 1)).swapaxes(
-        0, 1
+    tiled_positions = cp.broadcast_to(
+        cp.expand_dims(positions, axis=1),
+        (positions.shape[0], animal_positions.shape[0], 2),
     )  # runs out of memory here on the gpu, so need to use a different function than tile.
-    tiles_animal_positions = cp.tile(animal_positions, (positions.shape[0], 1, 1))
+    #  potential solution: set the datatype to float32
+    #  also try pytorch, and set datatype to float16, using no_grad block/decorator
+    tiles_animal_positions = cp.broadcast_to(
+        animal_positions, (positions.shape[0], animal_positions.shape[0], 2)
+    )
     x_abs = cp.abs(tiled_positions[:, :, 0] - tiles_animal_positions[:, :, 0])
     x_distance = cp.minimum(x_abs, board_size[0] - x_abs)
     y_abs = cp.abs(tiled_positions[:, :, 1] - tiles_animal_positions[:, :, 1])
