@@ -8,6 +8,7 @@ from matplotlib.lines import Line2D
 from optimised_functions import distance_between_points
 
 entity_class_id = {"grass": 1, "pig": 2, "fox": 3}
+cupy_datatype = cp.float16
 
 
 class BaseEntity(object):
@@ -27,7 +28,7 @@ class BaseEntity(object):
         self.vision_radius = 0
         self.point = None
         self.colour = colour
-        self.board_size = cp.array(board_size)
+        self.board_size = cp.array(board_size, dtype=cupy_datatype)
         # self.board_size = board_size
         self.creation_time = dt.now().time()
         self.age = 0
@@ -49,7 +50,8 @@ class BaseEntity(object):
             [
                 random.uniform(0, self.board_size[0]),
                 random.uniform(0, self.board_size[1]),
-            ]
+            ],
+            dtype=cupy_datatype,
         )
         return position
 

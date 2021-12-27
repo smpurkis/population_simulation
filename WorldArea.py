@@ -6,6 +6,8 @@ import cupy as cp
 from entities.BaseEntity import BaseEntity
 from optimised_functions import distance_between_points_vectorized
 
+cupy_datatype = cp.float16
+
 
 def calculate_world_areas(
     animals,
@@ -42,7 +44,9 @@ class WorldArea:
         """
         closest_entities_by_class = {}
         if len(distances) == 0:
-            positions = cp.array([e.position for e in entities if e.alive])
+            positions = cp.array(
+                [e.position for e in entities if e.alive], dtype=cupy_datatype
+            )
             distances = distance_between_points_vectorized(
                 self.entity.position, positions, self.board_size
             )

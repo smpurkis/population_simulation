@@ -9,6 +9,8 @@ from Genes import Genes, combined_genes
 from entities.BaseEntity import BaseEntity
 from optimised_functions import deg2rad, angle_between, correct_boundaries
 
+cupy_datatype = cp.float16
+
 
 class BaseAnimal(BaseEntity):
     """
@@ -102,7 +104,9 @@ class BaseAnimal(BaseEntity):
         x_step = move_distance * math.cos(angle_rad)
         y_step = move_distance * math.sin(angle_rad)
 
-        new_position = cp.array([self.position[0] + x_step, self.position[1] + y_step])
+        new_position = cp.array(
+            [self.position[0] + x_step, self.position[1] + y_step], dtype=cupy_datatype
+        )
         # new_position = [self.position[0] + x_step, self.position[1] + y_step]
         self.position = self.correct_boundaries(new_position)
 
@@ -123,7 +127,9 @@ class BaseAnimal(BaseEntity):
         x_step = move_distance * math.cos(angle_rad)
         y_step = move_distance * math.sin(angle_rad)
 
-        new_position = cp.array([self.position[0] + x_step, self.position[1] + y_step])
+        new_position = cp.array(
+            [self.position[0] + x_step, self.position[1] + y_step], dtype=cupy_datatype
+        )
         # new_position = [self.position[0] + x_step, self.position[1] + y_step]
         self.position = self.correct_boundaries(new_position)
 

@@ -27,7 +27,7 @@ from tqdm import tqdm
 matplotlib.use("TkAgg")
 # matplotlib.use('WebAgg')
 random.seed(1)
-
+cupy_datatype = cp.float16
 
 # ray.init(num_cpus=2)
 
@@ -39,7 +39,7 @@ class WorldBoard:
         initial_populations: Dict[str, int] = None,
         show_plot: bool = True,
     ):
-        self.board_size = cp.array(board_size)
+        self.board_size = cp.array(board_size, dtype=cupy_datatype)
         self.entities_dict_by_class: Dict[str, List[BaseEntity]] = {}
         self.entities_dict: Dict[str, BaseEntity] = {}
         self.entity_list: List[BaseEntity] = []
@@ -162,25 +162,26 @@ class WorldBoard:
     def calculate_set_world_areas(self):
         t = time.time()
         entity_list = [e for e in self.entity_list if e.alive]
-        positions = cp.array([e.position for e in entity_list])
+        positions = cp.array([e.position for e in entity_list], dtype=cupy_datatype)
         alive_animals = [e for e in self.showing_animals if e.alive]
         animal_positions = cp.array(
-            [e.position for e in self.showing_animals if e.alive]
+            [e.position for e in self.showing_animals if e.alive], dtype=cupy_datatype
         )
         animal_position_indices = cp.array(
             [cp.array([i, entity_list.index(e)]) for i, e in enumerate(alive_animals)]
         )
+        board_size = cp.array(self.board_size, dtype=cupy_datatype)
 
         p = time.time()
         all_distances = calculate_all_distance_between_animals_and_points_vectorized(
-            animal_positions, positions, self.board_size, animal_position_indices
+            animal_positions, positions, board_size, animal_position_indices
         )
         # print("all_distances_vect", time.time() - p)
         # p = time.time()
         # all_distances = calculate_all_distance_between_animals_and_points(
         #     animal_positions, positions, self.board_size
         # )
-        print("all_distances", time.time() - p)
+        # print("all_distances", time.time() - p)
         all_distances_time = time.time() - t
 
         t = time.time()
@@ -195,7 +196,7 @@ class WorldBoard:
         ) = calculate_all_nearest_ids_to_entity_vectorized(
             animal_entity_ids, entity_ids, all_distances, entity_classes, area_radiuses
         )
-        print("calculate_all_nearest_ids_to_entity", time.time() - t)
+        # print("calculate_all_nearest_ids_to_entity", time.time() - t)
 
         t = time.time()
         for animal_nearest_ids_details, animal_nearest_distances_details in zip(
@@ -209,7 +210,7 @@ class WorldBoard:
                 animal_nearest_distances_details.get()[1:],
                 self.entities_dict,
             )
-        print("set_nearest_ids", time.time() - t)
+        # print("set_nearest_ids", time.time() - t)
 
     def step(self):
         # TODO - Investigate parallel choose_action events
@@ -260,12 +261,12 @@ class WorldBoard:
                 )
                 self.spawn_plants(number_to_spawn=number_to_spawn)
         plant_spawn_time = time.time() - s
-        print(
-            # f"Distance calculation time: {all_distances_time:.3f}, "
-            f"Animal world area set time: {animal_update_world_area_time:.3f}, "
-            f"Animals action time: {animal_action_time:.3f}, "
-            f"Spawn plants time: {plant_spawn_time:.3f}"
-        )
+        # print(
+        #     # f"Distance calculation time: {all_distances_time:.3f}, "
+        #     f"Animal world area set time: {animal_update_world_area_time:.3f}, "
+        #     f"Animals action time: {animal_action_time:.3f}, "
+        #     f"Spawn plants time: {plant_spawn_time:.3f}"
+        # )
         o = 0
 
     def _setup_plot(self):
