@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 # import ray
 import numpy as np
+import pandas as pd
 
 # from joblib import Parallel, delayed
 from matplotlib import animation
@@ -42,7 +43,7 @@ class WorldBoard:
         self.entities_dict: Dict[str, BaseEntity] = {}
         self.entity_list: List[BaseEntity] = []
         self.dead_entities: List[BaseEntity] = []
-        self.showing_animals: List[BaseEntity] = []
+        self.showing_animals: List[BaseAnimal] = []
         self.step_no: int = 0
         self.show_plot = show_plot
         if show_plot:
@@ -284,6 +285,31 @@ class WorldBoard:
             if self.step_no > 10:
                 exit(0)
 
+    def analyze_genes(self):
+        df = pd.DataFrame(columns=["name", "entity_class", "value"])
+        for entity_class in self.entities_dict_by_class:
+            if entity_class == "grass":
+                continue
+            for entity in [
+                e for e in self.entities_dict_by_class[entity_class] if e.show
+            ]:
+                for gene in entity.genes.genes:
+                    df = df.append(
+                        {
+                            "name": gene.name,
+                            "entity_class": entity.entity_class,
+                            "value": gene.float_value,
+                        },
+                        ignore_index=True,
+                    )
+        means = df.groupby(["entity_class", "name"]).mean()
+        mins = df.groupby(["entity_class", "name"]).min()
+        maxs = df.groupby(["entity_class", "name"]).max()
+
+        # combined means, mins, maxs into a dataframe with variables as column names
+
+        return df
+
     def plot_world(self):
         """
         Plots all the entities by their position on a matplotlib graph
@@ -321,7 +347,7 @@ class WorldBoard:
             # print(
             #     f"Step time: {1000 * step_time:.3f} ms, Plot time: {1000 * plot_time:.3f} ms, Total time: {1000 * (step_time + plot_time):.3f} ms"
             # )
-            if self.step_no % 10 == 0:
+            if self.step_no % 100 == 1:
                 time_taken = time.time() - stationary_time
                 avg_time = 1000 * (time_taken / self.step_no)
                 print(
@@ -330,6 +356,9 @@ class WorldBoard:
                 print(
                     f"Grass: {len([e for e in self.entities_dict_by_class.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict_by_class.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict_by_class.get('fox', []) if e.alive])}, Alive: {len(self.entity_list)}, Dead: {len(self.dead_entities)}"
                 )
+                s = time.time()
+                self.analyze_genes()
+                analyze_time = time.time() - s
 
             # if self.step_no > 50:
             #     exit(0)
