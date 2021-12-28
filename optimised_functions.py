@@ -1,8 +1,15 @@
 import math
+import os
+import time
+from typing import Tuple
 
 import numba
 import numpy as np
 from numpy import ndarray
+
+# os.environ['NUMEXPR_MAX_THREADS'] = str(2 * os.cpu_count())
+os.environ["NUMEXPR_MAX_THREADS"] = "8"
+import numexpr as ne
 
 
 # @numba.njit(fastmath=True, boundscheck=False, inline="always")
@@ -93,6 +100,16 @@ def generate_self_distance_identity_array(self_distances, animal_position_indice
     return self_distances
 
 
+@numba.njit(fastmath=True, parallel=True, boundscheck=False, inline="always")
+def min_custom(array, board_size_value):
+    min_array = np.empty(array.shape, dtype=array.dtype)
+    bs = board_size_value - array
+    for i in numba.prange(array.shape[0]):
+        for j in numba.prange(array.shape[1]):
+            min_array[i, j] = min(array[i, j], bs[i, j])
+    return min_array
+
+
 # @numba.njit(fastmath=True, parallel=True, boundscheck=False, inline="always")
 def calculate_all_distance_between_animals_and_points_vectorized(
     animal_positions: ndarray,
@@ -108,17 +125,29 @@ def calculate_all_distance_between_animals_and_points_vectorized(
     tiles_animal_positions = np.broadcast_to(
         animal_positions, (positions.shape[0], animal_positions.shape[0], 2)
     )
-    x_abs = np.abs(tiled_positions[:, :, 0] - tiles_animal_positions[:, :, 0])
-    x_distance = np.minimum(x_abs, board_size[0] - x_abs)
-    y_abs = np.abs(tiled_positions[:, :, 1] - tiles_animal_positions[:, :, 1])
-    y_distance = np.minimum(y_abs, board_size[1] - y_abs)
-    all_distances = np.sqrt(x_distance ** 2 + y_distance ** 2).swapaxes(0, 1)
+
+    a = tiled_positions[:, :, 0]
+    b = tiles_animal_positions[:, :, 0]
+    x_abs = ne.evaluate("abs(a - b)")
+    x_distance = min_custom(x_abs, board_size[0])
+
+    a = tiled_positions[:, :, 1]
+    b = tiles_animal_positions[:, :, 1]
+    y_abs = ne.evaluate("abs(a - b)")
+    y_distance = min_custom(y_abs, board_size[1])
+
+    all_distances = np.swapaxes(
+        ne.evaluate("(x_distance ** 2 + y_distance ** 2) ** 0.5"), 0, 1
+    )
+
     self_distances = np.zeros(shape=(all_distances.shape[1], all_distances.shape[1]))
     self_distances = self_distances[self_distances.shape[0] - all_distances.shape[0] :]
     self_distances = generate_self_distance_identity_array(
         self_distances, animal_position_indices
     )
-    all_distances = all_distances + self_distances
+
+    all_distances = ne.evaluate("all_distances + self_distances")
+
     return all_distances
 
 
@@ -164,7 +193,7 @@ def calculate_all_nearest_ids_to_entity_vectorized(
     all_distances: ndarray,
     entity_class_ids: ndarray,
     area_radiuses: ndarray,
-) -> ndarray:
+) -> Tuple[ndarray, ndarray]:
     nearest_entity_ids_per_entity_class = np.zeros(
         (animal_entity_ids.shape[0], 1 + entity_class_ids.max()), dtype=np.int64
     )
