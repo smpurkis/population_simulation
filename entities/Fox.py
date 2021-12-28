@@ -9,7 +9,7 @@ class Fox(BaseAnimal):
         base_speed: float = 2,
         food_class: str = "pig",
         base_eating_penalty: int = 10,
-        base_vision_radius: int = 50,
+        base_vision_radius: int = 100,
         base_health: int = 500,
         base_hunger: int = 100,
         base_lifespan: int = 10_000,

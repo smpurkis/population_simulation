@@ -41,6 +41,7 @@ class WorldBoard:
         self.entities_dict_by_class: Dict[str, List[BaseEntity]] = {}
         self.entities_dict: Dict[str, BaseEntity] = {}
         self.entity_list: List[BaseEntity] = []
+        self.dead_entities: List[BaseEntity] = []
         self.showing_animals: List[BaseEntity] = []
         self.step_no: int = 0
         self.show_plot = show_plot
@@ -170,6 +171,10 @@ class WorldBoard:
         self.step_no += 1
         s = time.time()
 
+        for e in self.entity_list:
+            if not e.show:
+                self.dead_entities.append(e)
+        self.entity_list = [e for e in self.entity_list if e.show]
         self.showing_animals = [
             entity
             for entity in self.entity_list
@@ -234,9 +239,6 @@ class WorldBoard:
             ) * int(float(self.board_size[0] * self.board_size[1] / 100 ** 2) ** 0.5)
             base_number_to_spawn = max(base_number_to_spawn, 1)
             spawn_plants = random.randrange(100) <= 5
-            spawn_plants = (
-                False if len(self.entities_dict_by_class["grass"]) > 2 else spawn_plants
-            )
             if spawn_plants:
                 number_to_spawn = random.choice(
                     list(range(base_number_to_spawn, 4 * base_number_to_spawn))
@@ -326,7 +328,7 @@ class WorldBoard:
                     f"step_no: {self.step_no}, time: {time_taken}, average: {avg_time:.2f}ms"
                 )
                 print(
-                    f"Grass: {len([e for e in self.entities_dict_by_class.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict_by_class.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict_by_class.get('fox', []) if e.alive])}"
+                    f"Grass: {len([e for e in self.entities_dict_by_class.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict_by_class.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict_by_class.get('fox', []) if e.alive])}, Alive: {len(self.entity_list)}, Dead: {len(self.dead_entities)}"
                 )
 
             # if self.step_no > 50:
