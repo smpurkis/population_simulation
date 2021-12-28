@@ -329,8 +329,8 @@ class WorldBoard:
                     f"Grass: {len([e for e in self.entities_dict_by_class.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict_by_class.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict_by_class.get('fox', []) if e.alive])}"
                 )
 
-            if self.step_no > 50:
-                exit(0)
+            # if self.step_no > 50:
+            #     exit(0)
 
         ani = animation.FuncAnimation(self.fig, update_plot, interval=10, blit=False)
         plt.show()
