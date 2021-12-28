@@ -176,7 +176,6 @@ class WorldBoard:
             if entity.show and isinstance(entity, BaseAnimal)
         ]
 
-        t = time.time()
         entity_list = [e for e in self.entity_list if e.alive]
         positions = np.array([e.position for e in entity_list])
         alive_animals = [e for e in self.showing_animals if e.alive]
@@ -187,19 +186,13 @@ class WorldBoard:
             [np.array([i, entity_list.index(e)]) for i, e in enumerate(alive_animals)]
         )
 
-        p = time.time()
         all_distances = calculate_all_distance_between_animals_and_points_vectorized(
             animal_positions, positions, self.board_size, animal_position_indices
         )
-        # print("all_distances_vect", time.time() - p)
-        # p = time.time()
-        # all_distances = calculate_all_distance_between_animals_and_points(
-        #     animal_positions, positions, self.board_size
-        # )
-        # print("all_distances", time.time() - p)
-        all_distances_time = time.time() - t
 
-        t = time.time()
+        all_distances_time = time.time() - s
+        s2 = time.time()
+
         # calculate the nearest entity per entity class for each animal vectorized
         animal_entity_ids = np.array([e.id for e in alive_animals])
         entity_ids = np.array([e.id for e in entity_list])
@@ -211,9 +204,7 @@ class WorldBoard:
         ) = calculate_all_nearest_ids_to_entity_vectorized(
             animal_entity_ids, entity_ids, all_distances, entity_classes, area_radiuses
         )
-        # print("calculate_all_nearest_ids_to_entity", time.time() - t)
 
-        t = time.time()
         for animal_nearest_ids_details, animal_nearest_distances_details in zip(
             nearest_ids_per_entity_class_for_each_animal[:],
             nearest_distances_per_entity_class_for_each_animal[:],
@@ -225,27 +216,17 @@ class WorldBoard:
                 animal_nearest_distances_details[1:],
                 self.entities_dict,
             )
-        # print("set_nearest_ids", time.time() - t)
 
-        # world_areas = calculate_world_areas(
-        #     alive_animals,
-        #     entity_list,
-        #     all_distances,
-        # )
+        animal_update_world_area_time = time.time() - s2
+        s3 = time.time()
 
-        # for animal, world_area in zip(self.showing_animals, world_areas):
-        #     animal.world_area = world_area
-
-        animal_update_world_area_time = time.time() - s
-
-        s = time.time()
         for entity in self.entity_list:
             output = entity.step(entity_list, self.showing_animals)
             if output is not None:
                 self.spawn_child_animal(entity, entity.entity_class, output)
-        animal_action_time = time.time() - s
+        animal_action_time = time.time() - s3
 
-        s = time.time()
+        s4 = time.time()
         if self.step_no % 1 == 0:
             # TODO: Make this a function and improve the mechanics of grass spawning
             base_number_to_spawn = max(
@@ -261,14 +242,15 @@ class WorldBoard:
                     list(range(base_number_to_spawn, 4 * base_number_to_spawn))
                 )
                 self.spawn_plants(number_to_spawn=number_to_spawn)
-        plant_spawn_time = time.time() - s
+        plant_spawn_time = time.time() - s4
+        total_time = time.time() - s
         # print(
-        #     f"Distance calculation time: {all_distances_time:.3f}, "
-        #     f"Animal world area set time: {animal_update_world_area_time:.3f}, "
-        #     f"Animals action time: {animal_action_time:.3f}, "
-        #     f"Spawn plants time: {plant_spawn_time:.3f}"
+        #     f"Distance calculation time: {1000 * all_distances_time:.3f} ms, "
+        #     f"Animal world area set time: {1000 * animal_update_world_area_time:.3f} ms, "
+        #     f"Animals action time: {1000 * animal_action_time:.3f} ms, "
+        #     f"Spawn plants time: {1000 * plant_spawn_time:.3f} ms, ",
+        #     f"Total time: {1000 * total_time:.3f} ms",
         # )
-        o = 0
 
     def _setup_plot(self):
         self.fig = plt.figure(figsize=(12, 10))
@@ -335,7 +317,7 @@ class WorldBoard:
                         point.set_data([-1, -1])
             plot_time = time.time() - s
             # print(
-            #     f"Step time: {step_time:.3f} Plot time: {plot_time:.3f}, Total time: {step_time + plot_time:.3f}"
+            #     f"Step time: {1000 * step_time:.3f} ms, Plot time: {1000 * plot_time:.3f} ms, Total time: {1000 * (step_time + plot_time):.3f} ms"
             # )
             if self.step_no % 10 == 0:
                 time_taken = time.time() - stationary_time
@@ -347,8 +329,8 @@ class WorldBoard:
                     f"Grass: {len([e for e in self.entities_dict_by_class.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict_by_class.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict_by_class.get('fox', []) if e.alive])}"
                 )
 
-            # if self.step_no > 10:
-            #     exit(0)
+            if self.step_no > 50:
+                exit(0)
 
-        ani = animation.FuncAnimation(self.fig, update_plot, interval=100, blit=False)
+        ani = animation.FuncAnimation(self.fig, update_plot, interval=10, blit=False)
         plt.show()
