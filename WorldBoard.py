@@ -272,21 +272,31 @@ class WorldBoard:
         while True:
             s = time.time()
             self.step()
-            print(f"Step time: {time.time() - s}")
-            if self.step_no % 10 == 0:
+            step_time = time.time() - s
+
+            # print(
+            #     f"Step time: {1000 * step_time:.3f} ms, Plot time: {1000 * plot_time:.3f} ms, Total time: {1000 * (step_time + plot_time):.3f} ms"
+            # )
+            if self.step_no % 100 == 1:
                 time_taken = time.time() - stationary_time
                 avg_time = 1000 * (time_taken / self.step_no)
                 print(
-                    f"day: {self.step_no}, time: {time_taken}, average: {avg_time:.2f}ms"
+                    f"step_no: {self.step_no}, time: {time_taken}, average: {avg_time:.2f}ms"
                 )
                 print(
-                    f"Grass: {len([e for e in self.entities_dict.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict.get('fox', []) if e.alive])}"
+                    f"Grass: {len([e for e in self.entities_dict_by_class.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict_by_class.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict_by_class.get('fox', []) if e.alive])}, Alive: {len(self.entity_list)}, Dead: {len(self.dead_entities)}"
                 )
-            if self.step_no > 10:
-                exit(0)
+                s = time.time()
+                self.analyze_genes()
+                analyze_time = time.time() - s
+                print(f"Analyze time: {1000 * analyze_time:.3f} ms")
+
+            # if self.step_no > 3000:
+            #     exit(0)
 
     def analyze_genes(self):
-        df = pd.DataFrame(columns=["name", "entity_class", "value"])
+        s = time.time()
+        df = []
         for entity_class in self.entities_dict_by_class:
             if entity_class == "grass":
                 continue
@@ -294,19 +304,25 @@ class WorldBoard:
                 e for e in self.entities_dict_by_class[entity_class] if e.show
             ]:
                 for gene in entity.genes.genes:
-                    df = df.append(
+                    df.append(
                         {
                             "name": gene.name,
                             "entity_class": entity.entity_class,
                             "value": gene.float_value,
-                        },
-                        ignore_index=True,
+                        }
                     )
-        means = df.groupby(["entity_class", "name"]).mean()
+        df = pd.DataFrame(df)
         mins = df.groupby(["entity_class", "name"]).min()
+        means = df.groupby(["entity_class", "name"]).mean()
         maxs = df.groupby(["entity_class", "name"]).max()
 
         # combined means, mins, maxs into a dataframe with variables as column names
+        df = pd.concat(
+            [mins, means, maxs], axis=1, keys=["mins", "means", "maxs"]
+        ).reset_index()
+
+        print(df)
+        print(f"Analyze genes time: {1000 * (time.time() - s):.3f} ms")
 
         return df
 
@@ -347,7 +363,7 @@ class WorldBoard:
             # print(
             #     f"Step time: {1000 * step_time:.3f} ms, Plot time: {1000 * plot_time:.3f} ms, Total time: {1000 * (step_time + plot_time):.3f} ms"
             # )
-            if self.step_no % 100 == 1:
+            if self.step_no % 10 == 1:
                 time_taken = time.time() - stationary_time
                 avg_time = 1000 * (time_taken / self.step_no)
                 print(
@@ -356,9 +372,12 @@ class WorldBoard:
                 print(
                     f"Grass: {len([e for e in self.entities_dict_by_class.get('grass', []) if e.alive])}, Pigs: {len([e for e in self.entities_dict_by_class.get('pig', []) if e.alive])}, Foxes: {len([e for e in self.entities_dict_by_class.get('fox', []) if e.alive])}, Alive: {len(self.entity_list)}, Dead: {len(self.dead_entities)}"
                 )
-                s = time.time()
-                self.analyze_genes()
-                analyze_time = time.time() - s
+                # s = time.time()
+                # self.analyze_genes()
+                # analyze_time = time.time() - s
+                # print(
+                #     f"Analyze time: {1000 * analyze_time:.3f} ms"
+                # )
 
             # if self.step_no > 50:
             #     exit(0)
