@@ -114,12 +114,13 @@ class BaseEntity(object):
         self.speed = 0
         self.death_age = 1
 
-    def find_nearest_entity(self, entity_class=None):
+    def find_nearest_entity(self, entity_class=None, return_distance: bool = False):
         """
         Find the nearest entity to the current entity
         :param entity_class: find nearest entity of this type
         :return:
         """
+        nearest_entity_distance = None
         if entity_class is None:
             nearest_entity_with_distance = None
             for (
@@ -129,13 +130,21 @@ class BaseEntity(object):
                     nearest_entity_with_distance = entity_with_distance
                 else:
                     if (
-                        entity_with_distance["distance"]
-                        < nearest_entity_with_distance["distance"]
+                        entity_with_distance[1]["distance"]
+                        < nearest_entity_with_distance[1]["distance"]
                     ):
                         nearest_entity_with_distance = entity_with_distance
-            nearest_entity = nearest_entity_with_distance.get("entity", None)
+            nearest_entity = nearest_entity_with_distance[1].get("entity", None)
+            nearest_entity_distance = nearest_entity_with_distance[1]["distance"]
         else:
             nearest_entity = self.world_area.closest_entities_by_class.get(
                 entity_class, {}
             ).get("entity", None)
-        return nearest_entity
+            if return_distance:
+                nearest_entity_distance = self.world_area.closest_entities_by_class.get(
+                    entity_class, {}
+                ).get("distance", None)
+        if return_distance:
+            return nearest_entity, nearest_entity_distance
+        else:
+            return nearest_entity

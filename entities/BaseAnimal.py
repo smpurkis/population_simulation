@@ -21,6 +21,7 @@ class BaseAnimal(BaseEntity):
         colour: str,
         base_speed: float = 0,
         food_class: str = None,
+        predator_class: str = None,
         base_eating_penalty: int = 0,
         base_vision_radius: int = 10,
         base_health: int = 100,
@@ -34,6 +35,7 @@ class BaseAnimal(BaseEntity):
     ):
         super().__init__(entity_class, colour, *args, **kwargs)
         self.food_class = food_class
+        self.predator_class = predator_class
         self.eat_radius = 0.5
         self.skip_action_counter = 0
         self.reproduce_ready = False
@@ -43,6 +45,8 @@ class BaseAnimal(BaseEntity):
         self.child_genes: Genes = None
         self.genes: Genes = genes if genes is not None else Genes()
         self.births_left = random.choice(range(1, base_reproduce_amount + 1))
+
+        self._bravery = self.genes.bravery
 
         self._base_speed = base_speed
         self._max_speed = 1.5 * base_speed
@@ -55,7 +59,7 @@ class BaseAnimal(BaseEntity):
 
         self._base_hunger = base_hunger
         self._max_hunger = 500
-        self._base_hunger_rate = 10
+        self._base_hunger_rate = 5
         self.hunger_rate = self._base_hunger_rate
 
         self._base_health = base_health
@@ -113,6 +117,9 @@ class BaseAnimal(BaseEntity):
     def move_towards(self, entity: BaseEntity) -> np.ndarray:
         return self.move_towards_position(entity.position)
 
+    def move_from(self, entity: BaseEntity) -> np.ndarray:
+        return self.move_away_from_position(entity.position)
+
     def move_towards_position(self, position: np.ndarray) -> np.ndarray:
         """
         Moves the animal towards the position
@@ -122,6 +129,24 @@ class BaseAnimal(BaseEntity):
         distance_away = self.distance_from_point(position)
         move_distance = min(self.speed, distance_away)
         angle_rad = deg2rad(self.angle_to(position))
+        x_step = move_distance * math.cos(angle_rad)
+        y_step = move_distance * math.sin(angle_rad)
+
+        new_position = np.array([self.position[0] + x_step, self.position[1] + y_step])
+        # new_position = [self.position[0] + x_step, self.position[1] + y_step]
+        self.position = self.correct_boundaries(new_position)
+
+        return self.position
+
+    def move_away_from_position(self, position: np.ndarray) -> np.ndarray:
+        """
+        Moves the animal towards the position
+        :param position:
+        :return:
+        """
+        distance_away = self.distance_from_point(position)
+        move_distance = min(self.speed, distance_away)
+        angle_rad = deg2rad(self.angel_from(position))
         x_step = move_distance * math.cos(angle_rad)
         y_step = move_distance * math.sin(angle_rad)
 
@@ -214,12 +239,59 @@ class BaseAnimal(BaseEntity):
             if self.days_to_birth <= 0 and self.with_child:
                 return self.give_birth()
             t = time.time()
-            nearest_food_entity = self.find_nearest_entity(entity_class=self.food_class)
-            nearest_companion_entity = self.find_nearest_entity(
-                entity_class=self.entity_class
+            (
+                nearest_food_entity,
+                nearest_food_entity_distance,
+            ) = self.find_nearest_entity(
+                entity_class=self.food_class, return_distance=True
+            )
+            (
+                nearest_companion_entity,
+                nearest_companion_entity_distance,
+            ) = self.find_nearest_entity(
+                entity_class=self.entity_class, return_distance=True
+            )
+            (
+                nearest_predator_entity,
+                nearest_predator_entity_distance,
+            ) = self.find_nearest_entity(
+                entity_class=self.predator_class, return_distance=True
             )
             # print(f"Nearest entities time: {time.time() - t:.3f}")
+            prey_reproduction_ratio = 0
+            reproduction_predator_ratio = 0
+            prey_predator_ratio = 0
+
             if (
+                nearest_predator_entity is not None
+                and nearest_companion_entity is not None
+            ):
+                reproduction_predator_ratio = (
+                    nearest_predator_entity_distance / nearest_companion_entity_distance
+                )
+            if (
+                nearest_predator_entity is not None
+                and nearest_companion_entity is not None
+            ):
+                prey_predator_ratio = (
+                    nearest_predator_entity_distance / nearest_companion_entity_distance
+                )
+            if (
+                nearest_predator_entity is not None
+                and nearest_companion_entity is not None
+            ):
+                prey_reproduction_ratio = (
+                    nearest_predator_entity_distance / nearest_companion_entity_distance
+                )
+
+            #  todo: add ratios in the genes for when the animal will choose a specific action
+            if reproduction_predator_ratio:
+                pass
+
+            if nearest_predator_entity is not None:
+                self.move_from(nearest_predator_entity)
+
+            elif (
                 nearest_companion_entity is not None
                 and self.reproduce_ready
                 and self.reproduce_cooldown == 0
@@ -250,6 +322,14 @@ class BaseAnimal(BaseEntity):
         :return:
         """
         return angle_between(position, self.position)
+
+    def angel_from(self, position):
+        """
+        Calculates the angle to the position
+        :param position:
+        :return:
+        """
+        return 180 - angle_between(position, self.position)
 
     def eat_entity(self, entity: BaseEntity):
         """

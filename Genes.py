@@ -123,6 +123,9 @@ class Genes(object):
             self.reproduce_cycle = Gene(
                 "reproduce_cycle", mean=1.0, std=0.25, min_value=0.25, max_value=5.0
             )
+            self.bravery = Gene(
+                "bravery", mean=1.0, std=0.25, min_value=0.25, max_value=5.0
+            )
         else:
             self.speed = genes["speed"]
             self.vision_radius = genes["vision_radius"]
@@ -131,6 +134,7 @@ class Genes(object):
             self.hunger = genes["hunger"]
             self.lifespan = genes["lifespan"]
             self.reproduce_cycle = genes["reproduce_cycle"]
+            self.bravery = genes["bravery"]
         self.genes = [
             self.speed,
             self.vision_radius,
@@ -139,6 +143,7 @@ class Genes(object):
             self.hunger,
             self.lifespan,
             self.reproduce_cycle,
+            self.bravery,
         ]
 
     def get_bit_str(self) -> str:
@@ -150,6 +155,7 @@ class Genes(object):
             + self.hunger.get_bit_str()
             + self.lifespan.get_bit_str()
             + self.reproduce_cycle.get_bit_str()
+            + self.bravery.get_bit_str()
         )
 
     def get_bit_array(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -161,6 +167,7 @@ class Genes(object):
             self.hunger.get_bit_str(),
             self.lifespan.get_bit_str(),
             self.reproduce_cycle.get_bit_str(),
+            self.bravery.get_bit_str(),
         )
         bit_array_per_gene = np.array(
             [[int(b) for b in bit_str] for bit_str in bit_strs]
