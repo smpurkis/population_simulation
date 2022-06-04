@@ -1,7 +1,7 @@
 import math
 import random
 import time
-from typing import List, Dict
+from typing import Dict
 
 import numpy as np
 
@@ -27,6 +27,7 @@ class BaseAnimal(BaseEntity):
         base_hunger: int = 100,
         base_lifespan: int = 200,
         base_reproduce_cycle: int = 50,
+        base_reproduce_amount: int = 1,
         genes: Genes = None,
         *args,
         **kwargs,
@@ -37,10 +38,11 @@ class BaseAnimal(BaseEntity):
         self.skip_action_counter = 0
         self.reproduce_ready = False
         self.reproduce_counter = 0
-        self.days_to_birth = None
+        self.days_to_birth = -1
         self.with_child = False
         self.child_genes: Genes = None
         self.genes: Genes = genes if genes is not None else Genes()
+        self.births_left = random.choice(range(1, base_reproduce_amount + 1))
 
         self._base_speed = base_speed
         self._max_speed = 1.5 * base_speed
@@ -57,7 +59,7 @@ class BaseAnimal(BaseEntity):
         self.hunger_rate = self._base_hunger_rate
 
         self._base_health = base_health
-        self._max_health = 1_000
+        self._max_health = 10 * base_health
 
         self._base_lifespan = base_lifespan
         self._max_lifespan = 10 * base_lifespan
@@ -209,7 +211,7 @@ class BaseAnimal(BaseEntity):
         """
         s = time.time()
         if self.alive:
-            if self.with_child:
+            if self.days_to_birth <= 0 and self.with_child:
                 return self.give_birth()
             t = time.time()
             nearest_food_entity = self.find_nearest_entity(entity_class=self.food_class)
@@ -272,7 +274,10 @@ class BaseAnimal(BaseEntity):
         if self.with_child:
             self.days_to_birth -= 1
         else:
-            if self.age // self.reproduce_cycle > self.reproduce_counter:
+            if (
+                self.age // self.reproduce_cycle > self.reproduce_counter
+                and self.births_left > 0
+            ):
                 self.reproduce_ready = True
 
     def reproduce_with(self, nearest_companion_entity):
@@ -290,7 +295,9 @@ class BaseAnimal(BaseEntity):
         self.with_child = True
         self.days_to_birth = self.reproduce_cycle // 5
         self.reproduce_cooldown = self._base_reproduce_cycle
-        health_cost = self._base_health
+        health_cost = (
+            0.25 * self._max_health
+        )  # problem: pigs can reproduce without any grass, so net gain of health in the game, which should be made impossiible
         self.health -= health_cost
 
     def give_birth(self) -> Genes:
@@ -301,5 +308,6 @@ class BaseAnimal(BaseEntity):
         self.with_child = False
         child_genes = self.child_genes
         self.child_genes = None
-        self.days_to_birth = None
+        self.days_to_birth = -1
+        self.births_left -= 1
         return child_genes

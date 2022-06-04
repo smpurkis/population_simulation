@@ -86,11 +86,47 @@ def distance_between_points_vectorized(
     return distances
 
 
+# @numba.njit
+def generate_self_distance_identity_array(self_distances, animal_position_indices):
+    for animal_position_index in animal_position_indices:
+        self_distances[animal_position_index[0], animal_position_index[1]] = np.inf
+    return self_distances
+
+
 # @numba.njit(fastmath=True, parallel=True, boundscheck=False, inline="always")
-def calculate_all_distance_between_animals_and_points(
+def calculate_all_distance_between_animals_and_points_vectorized(
+    animal_positions: ndarray,
+    positions: ndarray,
+    board_size: ndarray,
+    animal_position_indices: ndarray,
+):
+    # pythran export calculate_all_distance_between_animals_and_points_vectorized(float [][], float [][], float [], int [][])
+    tiled_positions = np.broadcast_to(
+        np.expand_dims(positions, axis=1),
+        (positions.shape[0], animal_positions.shape[0], 2),
+    )
+    tiles_animal_positions = np.broadcast_to(
+        animal_positions, (positions.shape[0], animal_positions.shape[0], 2)
+    )
+    x_abs = np.abs(tiled_positions[:, :, 0] - tiles_animal_positions[:, :, 0])
+    x_distance = np.minimum(x_abs, board_size[0] - x_abs)
+    y_abs = np.abs(tiled_positions[:, :, 1] - tiles_animal_positions[:, :, 1])
+    y_distance = np.minimum(y_abs, board_size[1] - y_abs)
+    all_distances = np.sqrt(x_distance ** 2 + y_distance ** 2).swapaxes(0, 1)
+    self_distances = np.zeros(shape=(all_distances.shape[1], all_distances.shape[1]))
+    self_distances = self_distances[self_distances.shape[0] - all_distances.shape[0] :]
+    self_distances = generate_self_distance_identity_array(
+        self_distances, animal_position_indices
+    )
+    all_distances = all_distances + self_distances
+    return all_distances
+
+
+# @numba.njit(fastmath=True, parallel=True, boundscheck=False, inline="always")
+def calculate_all_distance_between_animals_and_points_parallel(
     animal_positions: ndarray, positions: ndarray, board_size: ndarray
 ):
-    # pythran export calculate_all_distance_between_animals_and_points(float [][], float [][], float [])
+    # pythran export calculate_all_distance_between_animals_and_points_parallel(float [][], float [][], float [])
     all_distances = np.zeros(shape=(animal_positions.shape[0], positions.shape[0]))
 
     # omp parallel for
@@ -120,3 +156,32 @@ def calculate_all_distance_between_points(positions: ndarray, board_size: ndarra
             all_distances[i, j] = dist
             all_distances[j, i] = dist
     return all_distances
+
+
+def calculate_all_nearest_ids_to_entity_vectorized(
+    animal_entity_ids: ndarray,
+    entity_ids: ndarray,
+    all_distances: ndarray,
+    entity_class_ids: ndarray,
+    area_radiuses: ndarray,
+) -> ndarray:
+    nearest_entity_ids_per_entity_class = np.zeros(
+        (animal_entity_ids.shape[0], 1 + entity_class_ids.max()), dtype=np.int64
+    )
+    nearest_distances_per_entity_class = np.zeros(
+        (animal_entity_ids.shape[0], 1 + entity_class_ids.max()), dtype=np.float64
+    )
+    nearest_entity_ids_per_entity_class[:, 0] = animal_entity_ids
+    for entity_class_id in set(entity_class_ids):
+        indices = entity_class_ids == entity_class_id
+        distances = all_distances[:, indices]
+        # distances[distances == 0] = np.inf
+        ids = entity_ids[indices]
+        nearest_distances = np.min(distances, axis=1)
+        not_in_radius = nearest_distances > area_radiuses
+        nearest_ids_indices = np.argmin(distances, axis=1)
+        nearest_ids = ids[nearest_ids_indices]
+        nearest_ids[not_in_radius] = 0
+        nearest_entity_ids_per_entity_class[:, entity_class_id] = nearest_ids
+        nearest_distances_per_entity_class[:, entity_class_id] = nearest_distances
+    return nearest_entity_ids_per_entity_class, nearest_distances_per_entity_class

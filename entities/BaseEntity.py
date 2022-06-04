@@ -7,6 +7,8 @@ from matplotlib.lines import Line2D
 
 from optimised_functions import distance_between_points
 
+entity_class_id = {"grass": 1, "pig": 2, "fox": 3}
+
 
 class BaseEntity(object):
     """
@@ -21,6 +23,7 @@ class BaseEntity(object):
     ):
         self.id = random.randint(1, 100_000_000_000_000)
         self.entity_class = entity_class
+        self.entity_class_id = entity_class_id.get(entity_class, 0)
         self.vision_radius = 0
         self.point = None
         self.colour = colour

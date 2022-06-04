@@ -17,7 +17,7 @@ def bin_to_float(binary: str) -> float:
 class Gene(object):
     def __init__(
         self,
-        gene_type: str,
+        name: str,
         value: Union[Optional[float], Optional[str]] = None,
         mean: float = 1.0,
         std: float = 0.5,
@@ -26,7 +26,7 @@ class Gene(object):
     ):
         self.min_value = min_value
         self.max_value = max_value
-        self.gene_type = gene_type
+        self.name = name
         if value is None:
             self.float_value = bin_to_float(
                 float_to_bin(
@@ -46,7 +46,7 @@ class Gene(object):
         return self.binary_value
 
     def __str__(self) -> str:
-        return f"{self.gene_type} - float: {self.float_value} - binary: {self.get_bit_str()}"
+        return f"{self.name} - float: {self.float_value} - binary: {self.get_bit_str()}"
 
     def __mul__(self, other: float) -> float:
         return self.float_value * other
@@ -102,24 +102,26 @@ class Genes(object):
         self.number_of_genes = 7
         self.gene_length = 32
         if genes is None:
-            self.speed = Gene("speed", mean=1.0, std=0.2, min_value=0.5, max_value=1.5)
+            self.speed = Gene(
+                "speed", mean=1.0, std=0.25, min_value=0.25, max_value=5.0
+            )
             self.vision_radius = Gene(
-                "vision_radius", mean=1.0, std=0.1, min_value=0.25, max_value=2.0
+                "vision_radius", mean=1.0, std=0.25, min_value=0.25, max_value=5.0
             )
             self.eating_penalty = Gene(
-                "eating_penalty", mean=1.0, std=0.1, min_value=0.5, max_value=2.0
+                "eating_penalty", mean=1.0, std=0.25, min_value=0.25, max_value=5.0
             )
             self.health = Gene(
-                "health", mean=1.0, std=0.1, min_value=0.25, max_value=2.0
+                "health", mean=1.0, std=0.25, min_value=0.25, max_value=5.0
             )
             self.hunger = Gene(
-                "hunger", mean=1.0, std=0.1, min_value=0.25, max_value=2.0
+                "hunger", mean=1.0, std=0.25, min_value=0.25, max_value=5.0
             )
             self.lifespan = Gene(
-                "lifespan", mean=1.0, std=0.1, min_value=0.25, max_value=2.0
+                "lifespan", mean=1.0, std=0.25, min_value=0.25, max_value=5.0
             )
             self.reproduce_cycle = Gene(
-                "reproduce_cycle", mean=1.0, std=0.2, min_value=0.5, max_value=2.0
+                "reproduce_cycle", mean=1.0, std=0.25, min_value=0.25, max_value=5.0
             )
         else:
             self.speed = genes["speed"]
@@ -175,7 +177,7 @@ def combined_genes(parent_1_genes, parent_2_genes):
     for i in zip(parent_1_genes.genes, parent_2_genes.genes):
         ratio = random.random() * 1.1
         gene_value = i[0].float_value * ratio + i[1].float_value * max(1 - ratio, 0)
-        gene = Gene(i[0].gene_type, value=gene_value)
+        gene = Gene(i[0].name, value=gene_value)
         gene.mutate()
-        genes[i[0].gene_type] = gene
+        genes[i[0].name] = gene
     return Genes(genes)
